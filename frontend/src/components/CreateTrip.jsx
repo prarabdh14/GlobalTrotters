@@ -123,6 +123,38 @@ const CreateTrip = () => {
                 rows="4"
                 placeholder="Describe your trip, what you're looking forward to, or any special occasions..."
               />
+              
+              {/* Personalized Suggestion Tags */}
+              <div className="mt-3">
+                <p className="text-sm text-gray-600 mb-2">Popular descriptions:</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Much needed break', 'Long overdue vacation', 'Celebrating our anniversary', 
+                    'First time visiting', 'Been dreaming about this', 'Girls trip', 'Boys trip',
+                    'Making memories with family', 'Exploring local culture', 'Trying authentic food',
+                    'Disconnecting from work', 'Adventure of a lifetime', 'Bucket list destination',
+                    'Spontaneous getaway', 'Perfect weather escape', 'Instagram-worthy spots'
+                  ].map((tag, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        const currentDescription = formData.description;
+                        const newDescription = currentDescription 
+                          ? `${currentDescription} ${tag}.`
+                          : `${tag}.`;
+                        setFormData(prev => ({
+                          ...prev,
+                          description: newDescription
+                        }));
+                      }}
+                      className="px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300 hover:shadow-md hover:scale-105"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
