@@ -54,7 +54,7 @@ const LoginScreen = ({ onLogin }) => {
   return (
     <>
       {/* Logo Section - Top Left Corner of Page */}
-      <div className="fixed top-6 left-6 z-50 animate-fade-in-up">
+      <div className="fixed top-8 left-12 z-50 animate-fade-in-up">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Globe size={32} className="text-blue-600 animate-pulse" />
@@ -64,10 +64,11 @@ const LoginScreen = ({ onLogin }) => {
         </div>
       </div>
 
-      <div className="min-h-screen flex items-center py-12 px-4 relative overflow-hidden" key="login-screen">
+      <div className="h-screen flex items-center py-4 px-4 relative overflow-hidden" key="login-screen" style={{overflow: 'hidden'}}>
         <div 
-          className={`w-72 relative z-20 ml-20 lg:ml-32`}
+          className={`w-80 relative z-40`}
           style={{
+            marginLeft: '290px',
             transform: isVisible ? 'translateX(0) scale(1)' : 'translateX(-150px) scale(0.8)',
             opacity: isVisible ? 1 : 0,
             transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -75,11 +76,11 @@ const LoginScreen = ({ onLogin }) => {
           onClick={() => console.log('Current isVisible state:', isVisible)}
         >
         {/* Login Form Header */}
-        <div className="mb-8 animate-fade-in-up">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2 animate-fade-in-up stagger-1">
-            Welcome Back
+        <div className="mb-4 animate-fade-in-up text-center">
+          <h2 className="text-4xl font-bold text-gray-800 mb-2 animate-fade-in-up stagger-1">
+            Welcome!
           </h2>
-          <p className="text-gray-600 text-base animate-fade-in-up stagger-1">
+          <p className="text-gray-600 text-lg animate-fade-in-up stagger-1">
             Sign in to your account
           </p>
         </div>
@@ -156,7 +157,7 @@ const LoginScreen = ({ onLogin }) => {
                 to="/register" 
                 className="text-blue-600 hover:text-blue-800 font-semibold transition-colors hover:underline"
               >
-                Don't have an account? Sign up
+                Don't have an account? Sign up!
               </Link>
             </div>
           </form>
