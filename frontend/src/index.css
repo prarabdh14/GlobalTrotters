@@ -237,15 +237,17 @@ body {
 
 /* Enhanced Card Styles with Glassmorphism */
 .card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  color: #e5e7eb;
 }
 
 .card::before {
@@ -255,12 +257,12 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
 }
 
 .card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 48px rgba(31, 38, 135, 0.28);
 }
 
 /* Enhanced Header */
@@ -370,7 +372,7 @@ body {
 .font-semibold { font-weight: 600; }
 .font-bold { font-weight: 700; }
 
-.text-gray-600 { color: #718096; }
+.text-gray-600 { color: #cbd5e0; }
 .text-gray-500 { color: #a0aec0; }
 
 .flex { display: flex; }
@@ -463,6 +465,74 @@ body {
   animation: pulse 2s infinite;
 }
 
+/* Utility updates and additions for spacing and colors */
+.mb-12 { margin-bottom: 48px; }
+
+.gap-6 { gap: 24px; }
+.gap-8 { gap: 32px; }
+
+.space-y-4 > * + * { margin-top: 16px; }
+.space-y-6 > * + * { margin-top: 24px; }
+
+/* Text color utilities to match design palette */
+.text-blue-600 { color: #667eea; }
+.text-green-600 { color: #16a34a; }
+.text-purple-600 { color: #764ba2; }
+.text-orange-600 { color: #ea580c; }
+.text-yellow-500 { color: #eab308; }
+.text-green-500 { color: #22c55e; }
+
+/* Hover color utilities (escaped class names with :) */
+.hover\:text-blue-800:hover { color: #5a6fd8; }
+
+/* Group hover helpers */
+.group:hover .group-hover\:scale-110 { transform: scale(1.10); }
+.group:hover .group-hover\:text-blue-600 { color: #667eea; }
+
+/* Tweak grays for better readability on translucent cards */
+.text-gray-600 { color: #cbd5e0; }
+.text-gray-500 { color: #a0aec0; }
+
+/* Utility compatibility for component classes */
+.text-white { color: #ffffff; }
+.text-gray-100 { color: #f3f4f6; }
+.text-right { text-align: right; }
+
+.relative { position: relative; }
+.absolute { position: absolute; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.bottom-4 { bottom: 16px; }
+.left-4 { left: 16px; }
+.right-4 { right: 16px; }
+
+.rounded-full { border-radius: 9999px; }
+.rounded-2xl { border-radius: 20px; }
+
+.w-6 { width: 24px; }
+.h-6 { height: 24px; }
+.w-12 { width: 48px; }
+.h-12 { height: 48px; }
+.w-16 { width: 64px; }
+.h-16 { height: 64px; }
+.w-20 { width: 80px; }
+.h-20 { height: 80px; }
+.h-48 { height: 12rem; }
+
+.object-cover { object-fit: cover; }
+.cursor-pointer { cursor: pointer; }
+
+.transition-colors { transition: color 0.3s ease; }
+.transition-transform { transition: transform 0.3s ease; }
+.duration-300 { transition-duration: 300ms; }
+.duration-500 { transition-duration: 500ms; }
+.duration-1000 { transition-duration: 1000ms; }
+
+/* Simple gradient overlay utility used in cards */
+.bg-gradient-to-t { background-image: linear-gradient(to top, var(--tw-gradient-from, rgba(0,0,0,0.6)), var(--tw-gradient-via, transparent), var(--tw-gradient-to, transparent)); }
+.from-black\/60 { --tw-gradient-from: rgba(0,0,0,0.6); }
+.via-transparent { --tw-gradient-via: transparent; }
+.to-transparent { --tw-gradient-to: transparent; }
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .container {
@@ -489,26 +559,16 @@ body {
   }
 }
 
-/* Dark mode support */
+/* Dark mode adjustments to keep glass translucent */
 @media (prefers-color-scheme: dark) {
   body {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     color: #f7fafc;
   }
-  
   .card {
-    background: rgba(45, 55, 72, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .header {
-    background: rgba(45, 55, 72, 0.95);
-  }
-  
-  .form-input {
-    background: rgba(45, 55, 72, 0.9);
-    color: #f7fafc;
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(17, 25, 40, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #e5e7eb;
   }
 }
 
@@ -529,3 +589,75 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
+
+/* Additional spacing utilities */
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+
+/* Additional gap utilities */
+.gap-2 { gap: 8px; }
+
+/* Extra text sizes */
+.text-xs { font-size: 12px; }
+
+/* Sizing helpers */
+.h-2 { height: 8px; }
+
+/* Overflow helper */
+.overflow-hidden { overflow: hidden; }
+
+/* Z-index helpers */
+.z-0 { z-index: 0; }
+.z-10 { z-index: 10; }
+
+/* Inline and display */
+.inline-block { display: inline-block; }
+
+/* Position offsets incl. negative */
+.top-0 { top: 0; }
+.right-0 { right: 0; }
+.-top-2 { top: -8px; }
+.-right-2 { right: -8px; }
+
+/* Centering helper */
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Transition helpers */
+.transition-all { transition: all 0.3s ease; }
+
+/* Background and gradient utilities needed by components */
+.bg-white\/30 { background-color: rgba(255, 255, 255, 0.3); }
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-from, #22c55e), var(--tw-gradient-to, #3b82f6)); }
+.from-green-400 { --tw-gradient-from: #4ade80; }
+.to-blue-500 { --tw-gradient-to: #3b82f6; }
+
+/* Rounded helpers */
+.rounded-xl { border-radius: 16px; }
+
+/* Flex helpers */
+.flex-wrap { flex-wrap: wrap; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+
+/* More gaps */
+.gap-3 { gap: 12px; }
+
+/* Larger display text sizes */
+.text-4xl { font-size: 36px; line-height: 1.2; }
+.text-5xl { font-size: 48px; line-height: 1.2; }
+
+/* Gradient to bottom-right and pale colors used in components */
+.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-from, #dbeafe), var(--tw-gradient-to, #ede9fe)); }
+.from-blue-100 { --tw-gradient-from: #dbeafe; }
+.to-purple-100 { --tw-gradient-to: #ede9fe; }
+
+/* Simple bounce animation for decorative dot */
+@keyframes bounce {
+  0%, 100% { transform: translateY(-10%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+  50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+.animate-bounce { animation: bounce 1.2s infinite; }

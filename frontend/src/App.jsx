@@ -14,6 +14,7 @@ import TripCalendar from './components/TripCalendar'
 import UserProfile from './components/UserProfile'
 import AdminDashboard from './components/AdminDashboard'
 import Header from './components/Header'
+import VantaGlobe from './components/VantaGlobe'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -31,35 +32,41 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route path="/login" element={<LoginScreen onLogin={handleLogin} />} />
-        <Route path="/register" element={<RegistrationScreen onLogin={handleLogin} />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <VantaGlobe>
+        <div className="min-h-screen">
+          <Routes>
+            <Route path="/login" element={<LoginScreen onLogin={handleLogin} />} />
+            <Route path="/register" element={<RegistrationScreen onLogin={handleLogin} />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </VantaGlobe>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header user={currentUser} onLogout={handleLogout} />
-      <main>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/create-trip" element={<CreateTrip />} />
-          <Route path="/my-trips" element={<MyTrips />} />
-          <Route path="/trip/:id/build" element={<ItineraryBuilder />} />
-          <Route path="/trip/:id/view" element={<ItineraryView />} />
-          <Route path="/trip/:id/budget" element={<TripBudget />} />
-          <Route path="/trip/:id/calendar" element={<TripCalendar />} />
-          <Route path="/search/cities" element={<CitySearch />} />
-          <Route path="/search/activities" element={<ActivitySearch />} />
-          <Route path="/profile" element={<UserProfile user={currentUser} />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </main>
-    </div>
+    <VantaGlobe>
+      <div className="min-h-screen">
+        <Header user={currentUser} onLogout={handleLogout} />
+        <main>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/create-trip" element={<CreateTrip />} />
+            <Route path="/my-trips" element={<MyTrips />} />
+            <Route path="/trip/:id/build" element={<ItineraryBuilder />} />
+            <Route path="/trip/:id/view" element={<ItineraryView />} />
+            <Route path="/trip/:id/budget" element={<TripBudget />} />
+            <Route path="/trip/:id/calendar" element={<TripCalendar />} />
+            <Route path="/search/cities" element={<CitySearch />} />
+            <Route path="/search/activities" element={<ActivitySearch />} />
+            <Route path="/profile" element={<UserProfile user={currentUser} />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </VantaGlobe>
   )
 }
 

@@ -43,6 +43,7 @@ const VantaGlobe = ({ children, ...props }) => {
               color: 0x3f51b5,
               color2: 0xffffff,
               backgroundColor: 0x0a0a0a,
+              backgroundAlpha: 1.0,
               size: 1.00,
               points: 10.00,
               maxDistance: 20.00,
@@ -69,17 +70,22 @@ const VantaGlobe = ({ children, ...props }) => {
   }, [props]);
 
   return (
-    <div 
-      ref={vantaRef} 
-      style={{ 
-        width: '100%', 
-        height: '100vh',
-        position: 'relative',
-        zIndex: 0
-      }}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        ref={vantaRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'none'
+        }}
+      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {children}
+      </div>
+    </>
   );
 };
 
