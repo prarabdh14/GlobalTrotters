@@ -16,15 +16,19 @@ router.get('/auth-url', auth, async (req, res) => {
   try {
     const scopes = [
       'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/calendar.events'
+      'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
     ];
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
-      scope: scopes,
-      prompt: 'consent'
+      scope: scopes.join(' '),
+      prompt: 'consent',
+      include_granted_scopes: true
     });
 
+    console.log('Generated auth URL with scopes:', scopes);
     res.json({ authUrl });
   } catch (error) {
     console.error('Error generating auth URL:', error);
@@ -35,14 +39,27 @@ router.get('/auth-url', auth, async (req, res) => {
 // Handle Google Calendar OAuth callback
 router.get('/callback', auth, async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, error } = req.query;
+    
+    if (error) {
+      console.error('OAuth error:', error);
+      return res.status(400).json({ error: `OAuth error: ${error}` });
+    }
     
     if (!code) {
       return res.status(400).json({ error: 'Authorization code is required' });
     }
 
+    console.log('Received authorization code, exchanging for tokens...');
+
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
+    
+    console.log('Tokens received:', {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      expiryDate: tokens.expiry_date
+    });
     
     // Store tokens in user record
     await prisma.user.update({
@@ -54,10 +71,11 @@ router.get('/callback', auth, async (req, res) => {
       }
     });
 
+    console.log('Tokens stored successfully for user:', req.user.id);
     res.json({ message: 'Google Calendar connected successfully' });
   } catch (error) {
     console.error('Calendar OAuth error:', error);
-    res.status(500).json({ error: 'Failed to connect Google Calendar' });
+    res.status(500).json({ error: 'Failed to connect Google Calendar: ' + error.message });
   }
 });
 
@@ -131,6 +149,34 @@ router.post('/add-trip', auth, async (req, res) => {
   }
 });
 
+// Check Google Calendar connection status
+router.get('/status', auth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        googleAccessToken: true,
+        googleRefreshToken: true,
+        googleTokenExpiry: true
+      }
+    });
+
+    const isConnected = !!(user?.googleAccessToken);
+    const hasRefreshToken = !!(user?.googleRefreshToken);
+    const isExpired = user?.googleTokenExpiry ? new Date() > new Date(user.googleTokenExpiry) : false;
+
+    res.json({
+      isConnected,
+      hasRefreshToken,
+      isExpired,
+      needsReauth: isConnected && isExpired
+    });
+  } catch (error) {
+    console.error('Error checking calendar status:', error);
+    res.status(500).json({ error: 'Failed to check calendar status' });
+  }
+});
+
 // Get user's Google Calendar events
 router.get('/events', auth, async (req, res) => {
   try {
@@ -140,6 +186,11 @@ router.get('/events', auth, async (req, res) => {
 
     if (!user.googleAccessToken) {
       return res.status(400).json({ error: 'Google Calendar not connected' });
+    }
+
+    // Check if token is expired
+    if (user.googleTokenExpiry && new Date() > new Date(user.googleTokenExpiry)) {
+      return res.status(401).json({ error: 'Token expired, please reconnect Google Calendar' });
     }
 
     oauth2Client.setCredentials({

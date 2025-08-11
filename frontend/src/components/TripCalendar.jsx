@@ -33,10 +33,14 @@ const TripCalendar = () => {
 
   const checkGoogleConnection = async () => {
     try {
-      await calendarApi.getEvents();
-      setIsGoogleConnected(true);
-      fetchGoogleEvents();
+      const status = await calendarApi.getStatus();
+      setIsGoogleConnected(status.isConnected);
+      
+      if (status.isConnected && !status.needsReauth) {
+        fetchGoogleEvents();
+      }
     } catch (err) {
+      console.error('Error checking Google connection:', err);
       setIsGoogleConnected(false);
     }
   };
@@ -176,6 +180,50 @@ const TripCalendar = () => {
           <div>
             <h1 className="text-3xl font-bold">Trip Calendar</h1>
             <p className="text-gray-600">View your trips in a calendar format</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Google Calendar Connection */}
+      <div className="card mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">Google Calendar Integration</h3>
+            <p className="text-sm text-gray-600">
+              {isGoogleConnected 
+                ? 'Connected to Google Calendar' 
+                : 'Connect your Google Calendar to sync trips and view events'
+              }
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {isGoogleConnected ? (
+              <button
+                onClick={() => fetchGoogleEvents()}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                <ExternalLink size={16} className="inline mr-2" />
+                Refresh Events
+              </button>
+            ) : (
+              <button
+                onClick={connectGoogleCalendar}
+                disabled={isConnectingGoogle}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {isConnectingGoogle ? (
+                  <>
+                    <div className="loading-spinner w-4 h-4 inline mr-2"></div>
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} className="inline mr-2" />
+                    Connect Calendar
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
