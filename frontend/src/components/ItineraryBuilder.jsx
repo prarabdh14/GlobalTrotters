@@ -101,11 +101,11 @@ const ItineraryBuilder = () => {
 
       <div className="space-y-6">
         {sections.map((section, index) => (
-          <div key={section.id} className="card">
+          <div key={section.id} className="card bg-white border border-gray-200 text-gray-900">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">{section.description}</p>
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">{section.title}</h3>
+                <p className="text-gray-700 text-sm mb-4">{section.description}</p>
               </div>
               <button 
                 onClick={() => removeSection(section.id)}
@@ -117,12 +117,12 @@ const ItineraryBuilder = () => {
 
             <div className="space-y-3">
               {section.activities.map((activity, actIndex) => (
-                <div key={actIndex} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div key={actIndex} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <MapPin size={16} className="text-gray-500" />
-                    <span className="font-medium">{activity.name}</span>
+                    <MapPin size={16} className="text-blue-600" />
+                    <span className="font-medium text-gray-900">{activity.name}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-gray-700">
                     <span className="flex items-center gap-1">
                       <Clock size={14} />
                       {activity.time}
@@ -135,7 +135,7 @@ const ItineraryBuilder = () => {
                 </div>
               ))}
               
-              <button className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
+              <button className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors">
                 <Plus size={16} className="inline mr-2" />
                 Add Activity
               </button>
@@ -144,11 +144,11 @@ const ItineraryBuilder = () => {
         ))}
 
         {showAddSection ? (
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Add New Section</h3>
+          <div className="card bg-white border border-gray-200 text-gray-900">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Add New Section</h3>
             <div className="space-y-4">
               <div className="form-group">
-                <label className="form-label">Section Title</label>
+                <label className="form-label text-gray-700">Section Title</label>
                 <input
                   type="text"
                   value={newSection.title}
@@ -158,7 +158,7 @@ const ItineraryBuilder = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Description</label>
+                <label className="form-label text-gray-700">Description</label>
                 <textarea
                   value={newSection.description}
                   onChange={(e) => setNewSection({...newSection, description: e.target.value})}
@@ -183,7 +183,7 @@ const ItineraryBuilder = () => {
         ) : (
           <button 
             onClick={() => setShowAddSection(true)}
-            className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors bg-white"
           >
             <Plus size={24} className="inline mr-2" />
             Add Another Section
