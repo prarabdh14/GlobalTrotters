@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, Plus, ExternalLink } from 'lucide-react';
 import { tripsApi } from '../api/trips';
+import { calendarApi } from '../api/calendar';
 
 const TripCalendar = () => {
   const [trips, setTrips] = useState([]);
+  const [googleEvents, setGoogleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
 
   useEffect(() => {
     fetchTrips();
+    checkGoogleConnection();
   }, []);
 
   const fetchTrips = async () => {
@@ -23,6 +28,45 @@ const TripCalendar = () => {
       console.error('Error fetching trips:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkGoogleConnection = async () => {
+    try {
+      await calendarApi.getEvents();
+      setIsGoogleConnected(true);
+      fetchGoogleEvents();
+    } catch (err) {
+      setIsGoogleConnected(false);
+    }
+  };
+
+  const fetchGoogleEvents = async () => {
+    try {
+      const response = await calendarApi.getEvents();
+      setGoogleEvents(response.events || []);
+    } catch (err) {
+      console.error('Error fetching Google events:', err);
+    }
+  };
+
+  const connectGoogleCalendar = async () => {
+    try {
+      setIsConnectingGoogle(true);
+      const response = await calendarApi.getAuthUrl();
+      window.location.href = response.authUrl;
+    } catch (err) {
+      setError('Failed to connect Google Calendar');
+      setIsConnectingGoogle(false);
+    }
+  };
+
+  const addTripToGoogleCalendar = async (tripId) => {
+    try {
+      await calendarApi.addTripToCalendar(tripId);
+      alert('Trip added to Google Calendar successfully!');
+    } catch (err) {
+      setError('Failed to add trip to Google Calendar');
     }
   };
 
