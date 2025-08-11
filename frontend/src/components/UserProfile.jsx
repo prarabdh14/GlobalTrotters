@@ -294,23 +294,6 @@ const UserProfile = ({ user }) => {
           </div>
         </div>
 
-        {/* Saved Destinations */}
-        <div className="card mt-8">
-          <h2 className="text-xl font-semibold mb-6">Saved Destinations</h2>
-          <div className="space-y-3">
-            {savedDestinations.map((destination, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <div className="font-medium">{destination.name}</div>
-                  <div className="text-sm text-gray-600">{destination.country}</div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  Saved {destination.saved}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   </VantaGlobe>

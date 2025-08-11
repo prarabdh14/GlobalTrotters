@@ -26,7 +26,7 @@ const Dashboard = ({ user }) => {
       destination: 'Paris, Rome, Barcelona',
       dates: 'Mar 15 - Mar 25, 2024',
       budget: '$2,500',
-      image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1665131439247-287a396b4edf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       progress: 75
     },
     {
