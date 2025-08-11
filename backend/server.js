@@ -12,6 +12,7 @@ const activityRoutes = require('./routes/activities');
 const aiRoutes = require('./routes/ai');
 const budgetRoutes = require('./routes/budgets');
 const adminRoutes = require('./routes/admin');
+const calendarRoutes = require('./routes/calendar');
 const { auth } = require('./middleware/auth');
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', auth, aiRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

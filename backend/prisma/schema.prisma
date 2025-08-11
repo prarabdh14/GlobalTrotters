@@ -16,10 +16,15 @@ datasource db {
 model User {
   id          Int       @id @default(autoincrement())
   email       String    @unique
-  password    String
+  password    String?
   name        String
   profileImg  String?
   language    String?
+  googleId    String?   @unique
+  isEmailVerified Boolean @default(false)
+  googleAccessToken String?
+  googleRefreshToken String?
+  googleTokenExpiry DateTime?
   createdAt   DateTime  @default(now())
   trips       Trip[]
   aiItineraries AiItinerary[]
