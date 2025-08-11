@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { DollarSign, PieChart, TrendingUp, AlertTriangle } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const TripBudget = () => {
   const { id } = useParams()
@@ -36,7 +37,17 @@ const TripBudget = () => {
   }
 
   return (
-    <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <div className="container py-8 relative z-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Trip Budget & Cost Breakdown</h1>
         <p className="text-gray-600">Track your expenses and stay within budget</p>
@@ -174,6 +185,7 @@ const TripBudget = () => {
         </div>
       )}
     </div>
+  </VantaGlobe>
   )
 }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Filter, Search } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
+import VantaGlobe from './VantaGlobe'
 
 const MyTrips = () => {
   const [trips] = useState([
@@ -85,8 +86,18 @@ const MyTrips = () => {
   })
 
   return (
-    <AnimatedPage>
-      <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <AnimatedPage>
+        <div className="container py-8 relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 animate-fade-in-up">
           <div>
@@ -229,7 +240,8 @@ const MyTrips = () => {
           </div>
         )}
       </div>
-    </AnimatedPage>
+      </AnimatedPage>
+    </VantaGlobe>
   )
 }
 

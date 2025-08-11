@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Search, MapPin, Star, DollarSign, Users } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const CitySearch = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,7 +98,17 @@ const CitySearch = () => {
   }
 
   return (
-    <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <div className="container py-8 relative z-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Explore Cities</h1>
         <p className="text-gray-600">Discover amazing destinations for your next adventure</p>
@@ -203,6 +214,7 @@ const CitySearch = () => {
         </div>
       )}
     </div>
+  </VantaGlobe>
   )
 }
 

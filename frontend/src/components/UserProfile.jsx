@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { User, Mail, Phone, MapPin, Settings, Save, Camera, Bell, Globe, DollarSign } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const UserProfile = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false)
@@ -59,8 +60,18 @@ const UserProfile = ({ user }) => {
   ]
 
   return (
-    <div className="container py-8">
-      <div className="max-w-4xl mx-auto">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <div className="container py-8 relative z-10">
+        <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">User Profile</h1>
           <p className="text-gray-600">Manage your account settings and travel preferences</p>
@@ -299,6 +310,7 @@ const UserProfile = ({ user }) => {
         </div>
       </div>
     </div>
+  </VantaGlobe>
   )
 }
 

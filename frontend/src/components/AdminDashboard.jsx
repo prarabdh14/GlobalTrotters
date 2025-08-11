@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Users, MapPin, TrendingUp, DollarSign, Calendar, Activity, BarChart3, PieChart } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview')
@@ -35,7 +36,17 @@ const AdminDashboard = () => {
   ]
 
   return (
-    <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <div className="container py-8 relative z-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
         <p className="text-gray-600">Monitor platform performance and user activity</p>
@@ -298,6 +309,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+  </VantaGlobe>
   )
 }
 
