@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Filter, Search } from 'lucide-react'
+import { Calendar, MapPin, Edit, Eye, Trash2, Plus } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
 import VantaGlobe from './VantaGlobe'
 
@@ -111,16 +111,15 @@ const MyTrips = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="card mb-8 animate-fade-in-up stagger-1">
+        <div className="card mb-8 animate-fade-in-up stagger-1 bg-white/10 border border-white/20 backdrop-blur-md">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none z-20" />
+            <div className="flex-1">
               <input
                 type="text"
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input relative z-0 h-12 pl-14 bg-white border border-gray-300 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 shadow-sm"
+                className="form-input h-12 bg-transparent border border-white/30 text-white placeholder:text-white/60 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 shadow-sm"
               />
             </div>
             <div className="flex gap-3 flex-wrap md:flex-nowrap items-stretch">
@@ -130,8 +129,8 @@ const MyTrips = () => {
                   onClick={() => setFilter(status)}
                   className={`px-4 h-12 rounded-xl font-medium transition-all duration-300 border ${
                     filter === status
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
-                      : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
+                      ? 'bg-transparent text-white border-blue-400/70 hover:bg-blue-500/10' 
+                      : 'bg-transparent text-white/80 border-white/30 hover:bg-white/10'
                   }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
