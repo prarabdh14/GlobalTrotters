@@ -107,3 +107,26 @@ model SharedTrip {
   createdAt DateTime @default(now())
 }
 
+/// AI-generated itinerary cache (Gemini-backed)
+model AiItinerary {
+  id            Int       @id @default(autoincrement())
+  cacheKey      String    @unique @map("cache_key")
+
+  source        String
+  destination   String
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime  @map("end_date")
+  preferences   Json?     @map("preferences")
+  budget        String?
+
+  model         String
+  prompt        String
+  responseJson  Json?     @map("response_json")
+  responseText  String?   @map("response_text")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([source, destination, startDate, endDate], name: "ix_ai_itin_basic")
+  @@map("ai_itineraries")
+}
+

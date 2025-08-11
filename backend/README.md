@@ -238,3 +238,26 @@ npx prisma studio        # Open Prisma Studio
 ## License
 
 This project is licensed under the ISC License. 
+
+# AI Itinerary (Gemini) Integration
+
+Env vars:
+
+- `GEMINI_API_KEY` (required)
+- `GEMINI_MODEL` (optional, default: models/gemini-1.5-pro)
+
+Run migrations:
+
+- Update Prisma schema already checked in (AiItinerary model)
+- Then run: `npx prisma migrate dev --name ai_itineraries`
+
+Routes:
+
+- `POST /api/ai/plan` body: `{ source, destination, start_date, end_date, preferences?, budget?, force_refresh? }`
+  - Cache-first by `cache_key` (sha256 of normalized inputs + model)
+  - Returns cached row or creates new via Gemini and stores prompt + outputs
+
+- `GET /api/ai/search?q=...&limit=20&offset=0`
+  - Searches cached itineraries (source/destination/response_text)
+
+Add to server is done via `app.use('/api/ai', aiRoutes)`. 
