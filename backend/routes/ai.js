@@ -133,7 +133,7 @@ function buildPrompt(p) {
     If JSON cannot be produced, fallback to well-structured markdown.`;
     }
 
-function makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model }) {
+function makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model, userId }) {
   const norm = {
     source: String(source || '').trim().toLowerCase(),
     destination: String(destination || '').trim().toLowerCase(),
@@ -141,9 +141,10 @@ function makeCacheKey({ source, destination, start_date, end_date, preferences, 
     end_date: new Date(end_date).toISOString().slice(0,10),
     preferences: preferences ? JSON.stringify(preferences, Object.keys(preferences).sort()) : '{}',
     budget: String(budget || '').trim().toLowerCase(),
-    model
+    model,
+    userId: String(userId || '')
   };
-  const payload = `${norm.source}|${norm.destination}|${norm.start_date}|${norm.end_date}|${norm.preferences}|${norm.budget}|${norm.model}`;
+  const payload = `${norm.source}|${norm.destination}|${norm.start_date}|${norm.end_date}|${norm.preferences}|${norm.budget}|${norm.model}|${norm.userId}`;
   return crypto.createHash('sha256').update(payload).digest('hex');
 }
 
@@ -161,7 +162,14 @@ router.post('/plan', async (req, res) => {
       return res.status(400).json({ error: 'source, destination, start_date, end_date are required' });
     }
 
-    const cacheKey = makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model: MODEL });
+    // Get user ID from the request (assuming it's set by auth middleware)
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log('No user ID found in request');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const cacheKey = makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model: MODEL, userId });
     console.log('Generated cache key:', cacheKey);
 
     if (!force_refresh) {
@@ -236,6 +244,7 @@ router.post('/plan', async (req, res) => {
       update: { responseJson: parsed, responseText: text, prompt, model: MODEL },
       create: {
         cacheKey,
+        userId,
         source,
         destination,
         startDate: new Date(start_date),
@@ -290,6 +299,35 @@ router.get('/search', async (req, res) => {
   } catch (err) {
     console.error('AI search error:', err);
     return res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// GET /api/ai/user - Get AI itineraries for the authenticated user
+router.get('/user', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const itineraries = await prisma.aiItinerary.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    return res.json(itineraries);
+  } catch (err) {
+    console.error('Error fetching user AI itineraries:', err);
+    return res.status(500).json({ error: 'Failed to fetch itineraries' });
   }
 });
 

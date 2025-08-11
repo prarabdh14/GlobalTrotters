@@ -1,198 +1,295 @@
-import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock } from 'lucide-react'
-import VantaGlobe from './VantaGlobe'
+import React, { useState, useEffect } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users } from 'lucide-react';
+import { tripsApi } from '../api/trips';
 
 const TripCalendar = () => {
-  const { id } = useParams()
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 2, 1)) // March 2024
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const tripEvents = [
-    { date: 15, title: 'Arrive in Paris', time: '10:00 AM', type: 'travel' },
-    { date: 15, title: 'Eiffel Tower Visit', time: '2:00 PM', type: 'activity' },
-    { date: 16, title: 'Louvre Museum', time: '10:00 AM', type: 'activity' },
-    { date: 16, title: 'Seine River Cruise', time: '6:00 PM', type: 'activity' },
-    { date: 17, title: 'Montmartre District', time: '11:00 AM', type: 'activity' },
-    { date: 18, title: 'Travel to Rome', time: '8:00 AM', type: 'travel' },
-    { date: 18, title: 'Colosseum Tour', time: '3:00 PM', type: 'activity' },
-    { date: 19, title: 'Vatican Museums', time: '9:00 AM', type: 'activity' },
-    { date: 20, title: 'Travel to Barcelona', time: '7:00 AM', type: 'travel' },
-    { date: 20, title: 'Sagrada Familia', time: '2:00 PM', type: 'activity' },
-    { date: 21, title: 'Park Güell', time: '10:00 AM', type: 'activity' },
-    { date: 22, title: 'Departure', time: '12:00 PM', type: 'travel' }
-  ]
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const tripsData = await tripsApi.list();
+      setTrips(tripsData);
+    } catch (err) {
+      setError('Failed to load trips');
+      console.error('Error fetching trips:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
-
-  const getEventsForDate = (day) => {
-    return tripEvents.filter(event => event.date === day)
-  }
-
-  const getEventTypeColor = (type) => {
-    switch (type) {
-      case 'travel': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'activity': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
     }
-  }
+    
+    // Add all days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+    
+    return days;
+  };
+
+  const getTripsForDate = (date) => {
+    if (!date) return [];
+    
+    const dateStr = date.toISOString().split('T')[0];
+    return trips.filter(trip => {
+      const startDate = new Date(trip.start_date).toISOString().split('T')[0];
+      const endDate = new Date(trip.end_date).toISOString().split('T')[0];
+      return dateStr >= startDate && dateStr <= endDate;
+    });
+  };
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSelected = (date) => {
+    return selectedDate && date.toDateString() === selectedDate.toDateString();
+  };
 
   const navigateMonth = (direction) => {
-    const newDate = new Date(currentDate)
-    newDate.setMonth(currentDate.getMonth() + direction)
-    setCurrentDate(newDate)
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + direction);
+      return newDate;
+    });
+  };
+
+  const getMonthName = (date) => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
+
+  const getDayName = (dayIndex) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[dayIndex];
+  };
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Calendar size={48} className="text-blue-500 mx-auto mb-4" />
+            <p className="text-gray-600">Loading calendar...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ]
+  if (error) {
+    return (
+      <div className="container py-8">
+        <div className="card bg-red-50 border-red-200">
+          <div className="text-red-800">
+            <h4 className="font-semibold">Error</h4>
+            <p>{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-  const daysInMonth = getDaysInMonth(currentDate)
-  const firstDay = getFirstDayOfMonth(currentDate)
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-  const emptyDays = Array.from({ length: firstDay }, (_, i) => null)
+  const days = getDaysInMonth(currentDate);
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={0.8}
-      points={8.00}
-      maxDistance={15.00}
-      spacing={12.00}
-      showDots={true}
-    >
-      <div className="container py-8 relative z-10">
+    <div className="container py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Trip Calendar</h1>
-        <p className="text-gray-600">View your itinerary in calendar format</p>
-      </div>
-
-      <div className="card">
-        {/* Calendar Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h2>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => navigateMonth(-1)}
-              className="btn btn-outline p-2"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button 
-              onClick={() => navigateMonth(1)}
-              className="btn btn-outline p-2"
-            >
-              <ChevronRight size={20} />
-            </button>
+        <div className="flex items-center gap-3 mb-4">
+          <Calendar className="text-blue-500" size={32} />
+          <div>
+            <h1 className="text-3xl font-bold">Trip Calendar</h1>
+            <p className="text-gray-600">View your trips in a calendar format</p>
           </div>
         </div>
+      </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1 mb-4">
-          {dayNames.map(day => (
-            <div key={day} className="p-3 text-center font-semibold text-gray-600 bg-gray-50">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {emptyDays.map((_, index) => (
-            <div key={`empty-${index}`} className="h-32 bg-gray-50"></div>
-          ))}
-          
-          {days.map(day => {
-            const events = getEventsForDate(day)
-            const isToday = day === 15 // Highlight trip start date
-            
-            return (
-              <div 
-                key={day} 
-                className={`h-32 p-2 border border-gray-200 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}
+      <div className="grid grid-1 lg:grid-2 gap-8">
+        {/* Calendar View */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold">Calendar</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigateMonth(-1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                  {day}
-                </div>
-                
-                <div className="space-y-1">
-                  {events.slice(0, 2).map((event, index) => (
-                    <div 
-                      key={index}
-                      className={`text-xs p-1 rounded border ${getEventTypeColor(event.type)}`}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      <div className="flex items-center gap-1 opacity-75">
-                        <Clock size={10} />
-                        {event.time}
+                <ChevronLeft size={20} />
+              </button>
+              <span className="font-medium min-w-[120px] text-center">
+                {getMonthName(currentDate)}
+              </span>
+              <button
+                onClick={() => navigateMonth(1)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Day Headers */}
+            {Array.from({ length: 7 }, (_, i) => (
+              <div key={i} className="p-2 text-center text-sm font-medium text-gray-600">
+                {getDayName(i)}
+              </div>
+            ))}
+            
+            {/* Calendar Days */}
+            {days.map((date, index) => {
+              const tripsForDate = getTripsForDate(date);
+              const hasTrips = tripsForDate.length > 0;
+              
+              return (
+                <div
+                  key={index}
+                  onClick={() => date && setSelectedDate(date)}
+                  className={`
+                    min-h-[80px] p-2 border border-gray-200 cursor-pointer transition-colors
+                    ${!date ? 'bg-gray-50' : ''}
+                    ${date && isToday(date) ? 'bg-blue-50 border-blue-300' : ''}
+                    ${date && isSelected(date) ? 'bg-blue-100 border-blue-400' : ''}
+                    ${date && hasTrips ? 'bg-green-50 border-green-300' : ''}
+                    hover:bg-gray-50
+                  `}
+                >
+                  {date && (
+                    <>
+                      <div className="text-sm font-medium mb-1">
+                        {date.getDate()}
                       </div>
-                    </div>
-                  ))}
-                  
-                  {events.length > 2 && (
-                    <div className="text-xs text-gray-500 text-center">
-                      +{events.length - 2} more
-                    </div>
+                      {hasTrips && (
+                        <div className="space-y-1">
+                          {tripsForDate.slice(0, 2).map((trip, tripIndex) => (
+                            <div
+                              key={tripIndex}
+                              className="text-xs bg-green-500 text-white px-1 py-0.5 rounded truncate"
+                              title={trip.title}
+                            >
+                              {trip.title}
+                            </div>
+                          ))}
+                          {tripsForDate.length > 2 && (
+                            <div className="text-xs text-green-600 font-medium">
+                              +{tripsForDate.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex gap-6 mt-6 pt-6 border-t border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
-            <span className="text-sm text-gray-600">Travel</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-            <span className="text-sm text-gray-600">Activities</span>
+              );
+            })}
           </div>
         </div>
-      </div>
 
-      {/* Upcoming Events */}
-      <div className="card mt-8">
-        <h2 className="text-xl font-semibold mb-6">Upcoming Events</h2>
-        <div className="space-y-3">
-          {tripEvents.slice(0, 5).map((event, index) => (
-            <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-              <div className="text-center min-w-[60px]">
-                <div className="text-lg font-bold text-blue-600">Mar</div>
-                <div className="text-2xl font-bold">{event.date}</div>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium">{event.title}</h3>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  <span className="flex items-center gap-1">
-                    <Clock size={14} />
-                    {event.time}
-                  </span>
-                  <span className={`px-2 py-1 rounded text-xs ${getEventTypeColor(event.type)}`}>
-                    {event.type}
-                  </span>
+        {/* Selected Date Details */}
+        <div className="card">
+          <h2 className="text-xl font-semibold mb-6">
+            {selectedDate ? `Trips on ${formatDate(selectedDate)}` : 'Select a date'}
+          </h2>
+          
+          {selectedDate ? (
+            <div className="space-y-4">
+              {getTripsForDate(selectedDate).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
+                  <p>No trips scheduled for this date</p>
                 </div>
-              </div>
+              ) : (
+                getTripsForDate(selectedDate).map((trip) => (
+                  <div key={trip.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-lg">{trip.title}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        trip.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        trip.status === 'ongoing' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {trip.status}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-3">{trip.description}</p>
+                    
+                    <div className="grid grid-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock size={16} className="text-gray-400" />
+                        <span>
+                          {new Date(trip.start_date).toLocaleDateString()} - {new Date(trip.end_date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      {trip.budget && (
+                        <div className="flex items-center gap-2">
+                          <Users size={16} className="text-gray-400" />
+                          <span>Budget: ₹{trip.budget}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {trip.tripStops && trip.tripStops.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <h4 className="font-medium text-sm mb-2">Stops:</h4>
+                        <div className="space-y-1">
+                          {trip.tripStops.map((stop, index) => (
+                            <div key={index} className="flex items-center gap-2 text-xs">
+                              <MapPin size={12} className="text-gray-400" />
+                              <span>{stop.city}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
-          ))}
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
+              <p>Click on a date to view trip details</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  </VantaGlobe>
-  )
-}
+  );
+};
 
-export default TripCalendar
+export default TripCalendar;

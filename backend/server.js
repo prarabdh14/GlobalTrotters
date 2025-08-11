@@ -12,6 +12,7 @@ const activityRoutes = require('./routes/activities');
 const aiRoutes = require('./routes/ai');
 const budgetRoutes = require('./routes/budgets');
 const adminRoutes = require('./routes/admin');
+const { auth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,7 +50,7 @@ app.use('/api/cities', cityRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', auth, aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

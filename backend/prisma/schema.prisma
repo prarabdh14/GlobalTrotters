@@ -22,6 +22,7 @@ model User {
   language    String?
   createdAt   DateTime  @default(now())
   trips       Trip[]
+  aiItineraries AiItinerary[]
 }
 
 model Trip {
@@ -112,6 +113,9 @@ model AiItinerary {
   id            Int       @id @default(autoincrement())
   cacheKey      String    @unique @map("cache_key")
 
+  user          User      @relation(fields: [userId], references: [id])
+  userId        Int       @map("user_id")
+
   source        String
   destination   String
   startDate     DateTime  @map("start_date")
@@ -127,6 +131,7 @@ model AiItinerary {
   createdAt     DateTime  @default(now()) @map("created_at")
 
   @@index([source, destination, startDate, endDate], name: "ix_ai_itin_basic")
+  @@index([userId], name: "ix_ai_itin_user")
   @@map("ai_itineraries")
 }
 
