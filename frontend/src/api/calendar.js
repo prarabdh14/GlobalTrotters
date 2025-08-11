@@ -7,6 +7,9 @@ export const calendarApi = {
   // Handle OAuth callback
   handleCallback: (code) => http.get(`/api/calendar/callback?code=${code}`),
 
+  // Check Google Calendar connection status
+  getStatus: () => http.get('/api/calendar/status'),
+
   // Add trip to Google Calendar
   addTripToCalendar: (tripId) => http.post('/api/calendar/add-trip', { tripId }),
 

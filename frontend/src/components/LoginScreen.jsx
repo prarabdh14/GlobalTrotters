@@ -4,7 +4,7 @@ import { Globe, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
 
 // Google OAuth
-const GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const LoginScreen = ({ onLogin }) => {
   const [formData, setFormData] = useState({
