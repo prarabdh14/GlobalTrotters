@@ -20,6 +20,7 @@ const Header = ({ user, onLogout }) => {
     <header className={`header transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
       <div className="container">
         <div className="header-content">
+          {/* Logo Section */}
           <Link to="/dashboard" className="logo flex items-center gap-3 animate-fade-in-left">
             <div className="relative">
               <Globe size={32} className="text-blue-600 animate-pulse" />
@@ -28,6 +29,7 @@ const Header = ({ user, onLogout }) => {
             <span className="gradient-text">GlobeTrotter</span>
           </Link>
           
+          {/* Main Navigation */}
           <nav className="hidden md:block animate-fade-in-down">
             <ul className="nav-links">
               <li className="animate-fade-in-down stagger-1">
@@ -54,33 +56,33 @@ const Header = ({ user, onLogout }) => {
                   Explore
                 </Link>
               </li>
+              <li className="animate-fade-in-down stagger-4">
+                <Link 
+                  to="/profile" 
+                  className={location.pathname === '/profile' ? 'active' : ''}
+                >
+                  Profile
+                </Link>
+              </li>
             </ul>
           </nav>
 
-          <div className="flex items-center gap-4 animate-fade-in-right">
-            <Link 
-              to="/profile" 
-              className="hidden md:flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-105"
-            >
-              <div className="relative">
-                <User size={20} />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              </div>
-              {user?.name || 'Profile'}
-            </Link>
-            
+          {/* Right Side Actions */}
+          <div className="flex items-center gap-3 animate-fade-in-right">
+            {/* Logout Button */}
             <button 
               onClick={onLogout}
-              className="hidden md:flex items-center gap-2 text-gray-600 hover:text-red-600 transition-all duration-300 hover:scale-105"
+              className="logout-btn hidden md:flex items-center gap-2"
+              title="Logout"
             >
-              <LogOut size={20} />
-              Logout
+              <LogOut size={18} />
+              <span>Logout</span>
             </button>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mobile-menu-btn md:hidden"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -88,34 +90,34 @@ const Header = ({ user, onLogout }) => {
         </div>
 
         {/* Mobile Menu */}
-        <div className={`md:hidden transition-all duration-300 overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+        <div className={`mobile-menu md:hidden transition-all duration-300 overflow-hidden ${
+          isMobileMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
         }`}>
           <nav className="py-4 space-y-2">
             <Link 
               to="/dashboard" 
-              className="block px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mobile-nav-link"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Dashboard
             </Link>
             <Link 
               to="/my-trips" 
-              className="block px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mobile-nav-link"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               My Trips
             </Link>
             <Link 
               to="/search/cities" 
-              className="block px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mobile-nav-link"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Explore
             </Link>
             <Link 
               to="/profile" 
-              className="block px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="mobile-nav-link"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Profile
@@ -125,8 +127,9 @@ const Header = ({ user, onLogout }) => {
                 onLogout()
                 setIsMobileMenuOpen(false)
               }}
-              className="block w-full text-left px-4 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="mobile-logout-btn"
             >
+              <LogOut size={18} />
               Logout
             </button>
           </nav>
