@@ -40,6 +40,8 @@ const ItineraryBuilder = () => {
     title: '',
     description: ''
   })
+  const [addActivityForSectionId, setAddActivityForSectionId] = useState(null)
+  const [newActivity, setNewActivity] = useState({ name: '', time: '', cost: '' })
 
   const addSection = () => {
     if (newSection.title && newSection.description) {
@@ -56,6 +58,22 @@ const ItineraryBuilder = () => {
 
   const removeSection = (sectionId) => {
     setSections(sections.filter(section => section.id !== sectionId))
+  }
+
+  const saveActivity = () => {
+    if (!addActivityForSectionId || !newActivity.name.trim()) return
+    const activityToAdd = {
+      name: newActivity.name.trim(),
+      time: newActivity.time.trim() || '—',
+      cost: newActivity.cost.trim() || '—'
+    }
+    setSections(prevSections => prevSections.map(section => (
+      section.id === addActivityForSectionId
+        ? { ...section, activities: [...section.activities, activityToAdd] }
+        : section
+    )))
+    setNewActivity({ name: '', time: '', cost: '' })
+    setAddActivityForSectionId(null)
   }
 
   return (
@@ -101,28 +119,32 @@ const ItineraryBuilder = () => {
 
       <div className="space-y-6">
         {sections.map((section, index) => (
-          <div key={section.id} className="card bg-white border border-gray-200 text-gray-900">
+          <div key={section.id} className="card bg-white/10 border border-white/20 backdrop-blur-md text-white">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{section.title}</h3>
-                <p className="text-gray-700 text-sm mb-4">{section.description}</p>
+                <h3 className="text-lg font-semibold mb-2 text-white">{section.title}</h3>
+                <p className="text-white/80 text-sm mb-4">{section.description}</p>
               </div>
-              <button 
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={() => removeSection(section.id)}
-                className="text-red-500 hover:text-red-700"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); removeSection(section.id) } }}
+                className="p-2 -m-2 inline-flex items-center justify-center text-red-200 hover:text-red-100 transition-colors cursor-pointer select-none focus:outline-none focus:ring-0"
+                aria-label="Remove section"
               >
-                <X size={20} />
-              </button>
+                <X size={18} />
+              </span>
             </div>
 
             <div className="space-y-3">
               {section.activities.map((activity, actIndex) => (
-                <div key={actIndex} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg">
+                <div key={actIndex} className="flex justify-between items-center p-3 bg-transparent border border-white/20 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <MapPin size={16} className="text-blue-600" />
-                    <span className="font-medium text-gray-900">{activity.name}</span>
+                    <MapPin size={16} className="text-blue-300" />
+                    <span className="font-medium text-white">{activity.name}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-700">
+                  <div className="flex items-center gap-4 text-sm text-white/80">
                     <span className="flex items-center gap-1">
                       <Clock size={14} />
                       {activity.time}
@@ -134,35 +156,72 @@ const ItineraryBuilder = () => {
                   </div>
                 </div>
               ))}
-              
-              <button className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors">
-                <Plus size={16} className="inline mr-2" />
-                Add Activity
-              </button>
+              {addActivityForSectionId === section.id ? (
+                <div className="rounded-lg border border-white/20 p-3 bg-transparent space-y-3">
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      value={newActivity.name}
+                      onChange={(e) => setNewActivity({ ...newActivity, name: e.target.value })}
+                      className="form-input bg-transparent border border-white/30 text-white placeholder:text-white/50"
+                      placeholder="Activity name"
+                    />
+                  </div>
+                  <div className="grid grid-2 gap-3">
+                    <input
+                      type="text"
+                      value={newActivity.time}
+                      onChange={(e) => setNewActivity({ ...newActivity, time: e.target.value })}
+                      className="form-input bg-transparent border border-white/30 text-white placeholder:text-white/50"
+                      placeholder="Time (e.g., 9:00 AM)"
+                    />
+                    <input
+                      type="text"
+                      value={newActivity.cost}
+                      onChange={(e) => setNewActivity({ ...newActivity, cost: e.target.value })}
+                      className="form-input bg-transparent border border-white/30 text-white placeholder:text-white/50"
+                      placeholder="Cost (e.g., $25)"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={saveActivity} className="btn btn-primary">
+                      Save Activity
+                    </button>
+                    <button onClick={() => { setAddActivityForSectionId(null); setNewActivity({ name: '', time: '', cost: '' }) }} className="btn btn-secondary">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setAddActivityForSectionId(section.id)} className="w-full p-3 border-2 border-dashed border-white/30 rounded-lg text-white/80 hover:border-blue-400 hover:text-blue-300 transition-colors bg-transparent">
+                  <Plus size={16} className="inline mr-2" />
+                  Add Activity
+                </button>
+              )}
             </div>
           </div>
         ))}
 
         {showAddSection ? (
-          <div className="card bg-white border border-gray-200 text-gray-900">
+          <div className="card bg-white/10 border border-white/20 backdrop-blur-md text-white">
             <h3 className="text-lg font-semibold mb-4 text-gray-900">Add New Section</h3>
             <div className="space-y-4">
               <div className="form-group">
-                <label className="form-label text-gray-700">Section Title</label>
+                <label className="form-label text-white/80">Section Title</label>
                 <input
                   type="text"
                   value={newSection.title}
                   onChange={(e) => setNewSection({...newSection, title: e.target.value})}
-                  className="form-input"
+                  className="form-input bg-transparent border border-white/30 text-white placeholder:text-white/50"
                   placeholder="e.g., Day 1, Morning Activities, etc."
                 />
               </div>
               <div className="form-group">
-                <label className="form-label text-gray-700">Description</label>
+                <label className="form-label text-white/80">Description</label>
                 <textarea
                   value={newSection.description}
                   onChange={(e) => setNewSection({...newSection, description: e.target.value})}
-                  className="form-input"
+                  className="form-input bg-transparent border border-white/30 text-white placeholder:text-white/50"
                   rows="3"
                   placeholder="Describe what this section covers..."
                 />
@@ -183,9 +242,9 @@ const ItineraryBuilder = () => {
         ) : (
           <button 
             onClick={() => setShowAddSection(true)}
-            className="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors bg-white"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-white/30 rounded-xl text-white/80 hover:border-blue-400 hover:text-blue-300 transition-colors bg-transparent text-sm"
           >
-            <Plus size={24} className="inline mr-2" />
+            <Plus size={18} className="inline" />
             Add Another Section
           </button>
         )}

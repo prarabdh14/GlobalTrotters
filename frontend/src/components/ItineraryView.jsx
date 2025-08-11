@@ -83,11 +83,11 @@ const ItineraryView = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="btn btn-outline">
+            <button className="btn btn-outline text-white/80 border-white/30 hover:text-blue-300 hover:border-blue-400">
               <Share2 size={16} />
               Share
             </button>
-            <button className="btn btn-outline">
+            <button className="btn btn-outline text-white/80 border-white/30 hover:text-blue-300 hover:border-blue-400">
               <Copy size={16} />
               Copy Trip
             </button>
