@@ -17,8 +17,7 @@ const UserProfile = ({ user }) => {
       phone: '+1 (555) 123-4567',
       location: 'New York, USA',
       bio: 'Travel enthusiast who loves exploring new cultures and cuisines. Always planning the next adventure!',
-      language: 'English',
-      currency: 'USD',
+      currency: 'INR',
       notifications: {
         email: true,
         push: false,
@@ -251,20 +250,6 @@ const UserProfile = ({ user }) => {
               </h3>
               <div className="space-y-4">
                 <div className="form-group">
-                  <label className="form-label">Language</label>
-                  <select
-                    name="language"
-                    value={formData.language}
-                    onChange={handleChange}
-                    className="form-input"
-                  >
-                    <option value="English">English</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="French">French</option>
-                    <option value="German">German</option>
-                  </select>
-                </div>
-                <div className="form-group">
                   <label className="form-label">Currency</label>
                   <select
                     name="currency"
@@ -276,6 +261,7 @@ const UserProfile = ({ user }) => {
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
                     <option value="JPY">JPY (¥)</option>
+                    <option value="INR">INR (₹)</option>
                   </select>
                 </div>
               </div>
