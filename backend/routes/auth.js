@@ -1,11 +1,16 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
 const prisma = require('../config/database');
 const { auth } = require('../middleware/auth');
 const { validateRegistration, validateLogin } = require('../middleware/validation');
 
 const router = express.Router();
+
+// Google OAuth
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Register new user
 router.post('/register', validateRegistration, async (req, res) => {
@@ -98,6 +103,81 @@ router.post('/login', validateLogin, async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Google OAuth Routes
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    if (!idToken) {
+      return res.status(400).json({ error: 'ID token is required' });
+    }
+
+    // Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    // Check if user exists
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { googleId }
+        ]
+      }
+    });
+
+    if (!user) {
+      // Create new user
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          profilePicture: picture,
+          googleId,
+          isEmailVerified: true
+        }
+      });
+    } else if (!user.googleId) {
+      // Link existing user with Google account
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId,
+          profilePicture: picture,
+          isEmailVerified: true
+        }
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Google authentication successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture
+      }
+    });
+
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+    res.status(500).json({ error: 'Google authentication failed' });
   }
 });
 
