@@ -16,7 +16,11 @@ import {
   Coffee,
   Camera,
   Wifi,
-  Gift
+  Gift,
+  BarChart3,
+  PieChart,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 const TripBudget = () => {
@@ -54,6 +58,66 @@ const TripBudget = () => {
   const remainingBudget = budget.total - totalSpent;
   const budgetPercentage = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
   const isOverBudget = totalSpent > budget.total;
+
+  // Calculate average cost per day
+  const getAverageCostPerDay = () => {
+    if (expenses.length === 0) return 0;
+    
+    const dates = [...new Set(expenses.map(exp => exp.date))];
+    const totalDays = dates.length;
+    
+    return totalDays > 0 ? totalSpent / totalDays : 0;
+  };
+
+  // Get daily spending breakdown
+  const getDailySpending = () => {
+    const dailyData = {};
+    
+    expenses.forEach(expense => {
+      const date = expense.date;
+      if (!dailyData[date]) {
+        dailyData[date] = 0;
+      }
+      dailyData[date] += expense.amount;
+    });
+
+    return Object.entries(dailyData)
+      .map(([date, amount]) => ({ date, amount }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  // Get overbudget days
+  const getOverbudgetDays = () => {
+    const dailySpending = getDailySpending();
+    const averageDailyBudget = budget.total / 30; // Assuming 30-day trip, adjust as needed
+    
+    return dailySpending.filter(day => day.amount > averageDailyBudget);
+  };
+
+  // Get category breakdown for charts
+  const getCategoryBreakdown = () => {
+    const breakdown = {};
+    
+    categories.forEach(cat => {
+      breakdown[cat.key] = expenses
+        .filter(exp => exp.category === cat.key)
+        .reduce((sum, exp) => sum + exp.amount, 0);
+    });
+
+    return breakdown;
+  };
+
+  // Calculate pie chart data
+  const getPieChartData = () => {
+    const breakdown = getCategoryBreakdown();
+    const total = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+    
+    return categories.map(cat => ({
+      ...cat,
+      value: breakdown[cat.key],
+      percentage: total > 0 ? (breakdown[cat.key] / total) * 100 : 0
+    })).filter(item => item.value > 0);
+  };
 
   const getCategoryTotal = (category) => {
     return expenses
@@ -103,6 +167,11 @@ const TripBudget = () => {
     return cat ? cat.color : '#6b7280';
   };
 
+  const averageDailyCost = getAverageCostPerDay();
+  const dailySpending = getDailySpending();
+  const overbudgetDays = getOverbudgetDays();
+  const pieChartData = getPieChartData();
+
   return (
     <div className="min-h-screen py-8 animate-fade-in-up">
       <div className="container">
@@ -121,7 +190,7 @@ const TripBudget = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Total Budget</p>
-                <p className="text-2xl font-bold text-white">${budget.total.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-white">₹{budget.total.toLocaleString()}</p>
               </div>
               <div className="p-3 bg-blue-500/20 rounded-full">
                 <DollarSign className="text-blue-400" size={24} />
@@ -133,7 +202,7 @@ const TripBudget = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm">Total Spent</p>
-                <p className="text-2xl font-bold text-white">${totalSpent.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-white">₹{totalSpent.toLocaleString()}</p>
               </div>
               <div className="p-3 bg-red-500/20 rounded-full">
                 <TrendingUp className="text-red-400" size={24} />
@@ -146,7 +215,7 @@ const TripBudget = () => {
               <div>
                 <p className="text-gray-400 text-sm">Remaining</p>
                 <p className={`text-2xl font-bold ${remainingBudget >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  ${remainingBudget.toLocaleString()}
+                  ₹{remainingBudget.toLocaleString()}
                 </p>
               </div>
               <div className={`p-3 rounded-full ${remainingBudget >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
@@ -158,11 +227,11 @@ const TripBudget = () => {
           <div className="card hover-lift animate-fade-in-up stagger-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Budget Used</p>
-                <p className="text-2xl font-bold text-white">{budgetPercentage.toFixed(1)}%</p>
+                <p className="text-gray-400 text-sm">Avg/Day</p>
+                <p className="text-2xl font-bold text-white">₹{averageDailyCost.toFixed(0)}</p>
               </div>
               <div className="p-3 bg-purple-500/20 rounded-full">
-                <TrendingUp className="text-purple-400" size={24} />
+                <Clock className="text-purple-400" size={24} />
               </div>
             </div>
           </div>
@@ -183,11 +252,136 @@ const TripBudget = () => {
             {isOverBudget && (
               <div className="flex items-center mt-2 text-red-400">
                 <AlertTriangle size={16} className="mr-2" />
-                <span className="text-sm">Over budget by ${Math.abs(remainingBudget).toLocaleString()}</span>
+                <span className="text-sm">Over budget by ₹{Math.abs(remainingBudget).toLocaleString()}</span>
               </div>
             )}
           </div>
         </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Pie Chart */}
+          <div className="card animate-fade-in-left">
+            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <PieChart size={20} />
+              Expense Distribution
+            </h3>
+            <div className="space-y-4">
+              {pieChartData.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <PieChart size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No expenses recorded yet</p>
+                </div>
+              ) : (
+                pieChartData.map((item, index) => (
+                  <div key={item.key} className="animate-fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{backgroundColor: `${item.color}20`}}>
+                          <item.icon size={16} style={{color: item.color}} />
+                        </div>
+                        <span className="text-gray-300">{item.label}</span>
+                      </div>
+                      <span className="text-white font-semibold">₹{item.value.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-3">
+                      <div 
+                        className="h-3 rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${item.percentage}%`,
+                          backgroundColor: item.color
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>{item.percentage.toFixed(1)}% of total</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bar Chart - Daily Spending */}
+          <div className="card animate-fade-in-right">
+            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <BarChart3 size={20} />
+              Daily Spending Trend
+            </h3>
+            <div className="space-y-4">
+              {dailySpending.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <BarChart3 size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No daily spending data yet</p>
+                </div>
+              ) : (
+                dailySpending.map((day, index) => {
+                  const maxAmount = Math.max(...dailySpending.map(d => d.amount));
+                  const barHeight = maxAmount > 0 ? (day.amount / maxAmount) * 100 : 0;
+                  const isOverbudget = day.amount > (budget.total / 30); // Assuming 30-day trip
+                  
+                  return (
+                    <div key={day.date} className="animate-fade-in-up" style={{animationDelay: `${index * 0.05}s`}}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 text-sm text-gray-400">
+                          {new Date(day.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                        </div>
+                        <div className="flex-1 bg-gray-700 rounded-full h-4 relative">
+                          <div 
+                            className={`h-4 rounded-full transition-all duration-500 ${
+                              isOverbudget ? 'bg-red-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${barHeight}%` }}
+                          ></div>
+                        </div>
+                        <div className="w-20 text-right">
+                          <span className={`text-sm font-semibold ${isOverbudget ? 'text-red-400' : 'text-white'}`}>
+                            ₹{day.amount.toLocaleString()}
+                          </span>
+                          {isOverbudget && (
+                            <AlertCircle size={12} className="text-red-400 ml-1 inline" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Overbudget Alerts */}
+        {overbudgetDays.length > 0 && (
+          <div className="card mb-8 animate-fade-in-up stagger-6 bg-red-500/10 border-red-500/20">
+            <h3 className="text-xl font-semibold text-red-400 mb-4 flex items-center gap-2">
+              <AlertTriangle size={20} />
+              Overbudget Day Alerts
+            </h3>
+            <div className="space-y-3">
+              {overbudgetDays.map((day, index) => (
+                <div key={day.date} className="flex items-center justify-between p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                  <div className="flex items-center gap-3">
+                    <Calendar size={16} className="text-red-400" />
+                    <span className="text-white">
+                      {new Date(day.date).toLocaleDateString('en-IN', { 
+                        weekday: 'long', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-red-400 font-semibold">₹{day.amount.toLocaleString()}</span>
+                    <p className="text-xs text-red-300">
+                      {((day.amount / (budget.total / 30)) * 100).toFixed(0)}% of daily budget
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Budget Setup Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -212,7 +406,7 @@ const TripBudget = () => {
               <div className="flex items-center gap-4 pt-4 border-t border-gray-600">
                 <div className="w-32 text-white font-semibold">Total</div>
                 <div className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white font-semibold">
-                  ${Object.values(budget).reduce((sum, val) => sum + (val || 0), 0).toLocaleString()}
+                  ₹{Object.values(budget).reduce((sum, val) => sum + (val || 0), 0).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -237,7 +431,7 @@ const TripBudget = () => {
                         </div>
                         <span className="text-gray-300">{category.label}</span>
                       </div>
-                      <span className="text-white font-semibold">${spent.toLocaleString()}</span>
+                      <span className="text-white font-semibold">₹{spent.toLocaleString()}</span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-2">
                       <div 
@@ -249,7 +443,7 @@ const TripBudget = () => {
                       ></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>Budget: ${budgeted.toLocaleString()}</span>
+                      <span>Budget: ₹{budgeted.toLocaleString()}</span>
                       <span>{percentage.toFixed(1)}%</span>
                     </div>
                   </div>
@@ -433,7 +627,7 @@ const TripBudget = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-white font-semibold">${expense.amount.toLocaleString()}</span>
+                      <span className="text-white font-semibold">₹{expense.amount.toLocaleString()}</span>
                       <button
                         onClick={() => setEditingExpense(expense)}
                         className="p-2 text-gray-400 hover:text-blue-400 transition-colors"

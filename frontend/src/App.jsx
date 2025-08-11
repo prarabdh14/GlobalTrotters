@@ -77,6 +77,7 @@ function App() {
             <Route path="/trip/:id/build" element={<ItineraryBuilder />} />
             <Route path="/trip/:id/view" element={<ItineraryView />} />
             <Route path="/trip/:id/budget" element={<TripBudget />} />
+            <Route path="/budget" element={<TripBudget />} />
             <Route path="/trip/:id/calendar" element={<TripCalendar />} />
             <Route path="/search/cities" element={<CitySearch />} />
             <Route path="/search/activities" element={<ActivitySearch />} />
