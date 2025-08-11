@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Globe, User, LogOut, Menu, X } from 'lucide-react'
+import { Globe, User, LogOut } from 'lucide-react'
 
 const Header = ({ user, onLogout }) => {
   const location = useLocation()
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,61 +77,7 @@ const Header = ({ user, onLogout }) => {
               <LogOut size={18} />
               <span>Logout</span>
             </button>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="mobile-menu-btn md:hidden"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
           </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className={`mobile-menu md:hidden transition-all duration-300 overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
-          <nav className="py-4 space-y-2">
-            <Link 
-              to="/dashboard" 
-              className="mobile-nav-link"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/my-trips" 
-              className="mobile-nav-link"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              My Trips
-            </Link>
-            <Link 
-              to="/search/cities" 
-              className="mobile-nav-link"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Explore
-            </Link>
-            <Link 
-              to="/profile" 
-              className="mobile-nav-link"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Profile
-            </Link>
-            <button 
-              onClick={() => {
-                onLogout()
-                setIsMobileMenuOpen(false)
-              }}
-              className="mobile-logout-btn"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
-          </nav>
         </div>
       </div>
     </header>
