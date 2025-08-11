@@ -70,8 +70,8 @@ function App() {
         <Header user={currentUser} onLogout={handleLogout} />
         <main>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard user={currentUser} />} />
+            <Route path="/dashboard" element={<Dashboard user={currentUser} />} />
             <Route path="/create-trip" element={<CreateTrip />} />
             <Route path="/my-trips" element={<MyTrips />} />
             <Route path="/trip/:id/build" element={<ItineraryBuilder />} />
