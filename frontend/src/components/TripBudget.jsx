@@ -1,192 +1,461 @@
-import React, { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { DollarSign, PieChart, TrendingUp, AlertTriangle } from 'lucide-react'
-import VantaGlobe from './VantaGlobe'
+import React, { useState, useEffect } from 'react';
+import { 
+  DollarSign, 
+  TrendingUp, 
+  AlertTriangle, 
+  Plus, 
+  Edit3, 
+  Trash2, 
+  Calendar,
+  MapPin,
+  Activity,
+  Utensils,
+  Home,
+  Car,
+  ShoppingBag,
+  Coffee,
+  Camera,
+  Wifi,
+  Gift
+} from 'lucide-react';
 
 const TripBudget = () => {
-  const { id } = useParams()
-  
-  const budgetData = {
-    totalBudget: 2500,
-    spent: 1850,
-    remaining: 650,
-    categories: [
-      { name: 'Transportation', budgeted: 800, spent: 650, color: '#3b82f6' },
-      { name: 'Accommodation', budgeted: 900, spent: 720, color: '#10b981' },
-      { name: 'Food & Dining', budgeted: 500, spent: 380, color: '#f59e0b' },
-      { name: 'Activities', budgeted: 300, spent: 100, color: '#8b5cf6' }
-    ],
-    dailyBreakdown: [
-      { date: 'Mar 15', planned: 250, actual: 280, overBudget: true },
-      { date: 'Mar 16', planned: 300, actual: 275, overBudget: false },
-      { date: 'Mar 17', planned: 200, actual: 195, overBudget: false },
-      { date: 'Mar 18', planned: 350, actual: 320, overBudget: false },
-      { date: 'Mar 19', planned: 180, actual: 0, overBudget: false }
-    ]
-  }
+  const [budget, setBudget] = useState({
+    total: 0,
+    transport: 0,
+    accommodation: 0,
+    activities: 0,
+    meals: 0,
+    shopping: 0,
+    misc: 0
+  });
 
-  const getPercentage = (spent, budgeted) => {
-    return Math.round((spent / budgeted) * 100)
-  }
+  const [expenses, setExpenses] = useState([]);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [newExpense, setNewExpense] = useState({
+    amount: '',
+    category: 'misc',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    location: ''
+  });
 
-  const getBudgetStatus = (spent, budgeted) => {
-    const percentage = getPercentage(spent, budgeted)
-    if (percentage > 100) return { color: 'text-red-600', status: 'Over Budget' }
-    if (percentage > 80) return { color: 'text-yellow-600', status: 'Near Limit' }
-    return { color: 'text-green-600', status: 'On Track' }
-  }
+  const categories = [
+    { key: 'transport', label: 'Transport', icon: Car, color: '#3b82f6' },
+    { key: 'accommodation', label: 'Accommodation', icon: Home, color: '#10b981' },
+    { key: 'activities', label: 'Activities', icon: Activity, color: '#f59e0b' },
+    { key: 'meals', label: 'Meals', icon: Utensils, color: '#ef4444' },
+    { key: 'shopping', label: 'Shopping', icon: ShoppingBag, color: '#8b5cf6' },
+    { key: 'misc', label: 'Miscellaneous', icon: Gift, color: '#6b7280' }
+  ];
+
+  const totalSpent = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  const remainingBudget = budget.total - totalSpent;
+  const budgetPercentage = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
+  const isOverBudget = totalSpent > budget.total;
+
+  const getCategoryTotal = (category) => {
+    return expenses
+      .filter(expense => expense.category === category)
+      .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+  };
+
+  const handleAddExpense = () => {
+    if (newExpense.amount && newExpense.description) {
+      const expense = {
+        id: Date.now(),
+        ...newExpense,
+        amount: parseFloat(newExpense.amount)
+      };
+      setExpenses([...expenses, expense]);
+      setNewExpense({
+        amount: '',
+        category: 'misc',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+        location: ''
+      });
+      setShowAddExpense(false);
+    }
+  };
+
+  const handleEditExpense = () => {
+    if (editingExpense && editingExpense.amount && editingExpense.description) {
+      setExpenses(expenses.map(exp => 
+        exp.id === editingExpense.id ? { ...editingExpense, amount: parseFloat(editingExpense.amount) } : exp
+      ));
+      setEditingExpense(null);
+    }
+  };
+
+  const handleDeleteExpense = (id) => {
+    setExpenses(expenses.filter(exp => exp.id !== id));
+  };
+
+  const getCategoryIcon = (category) => {
+    const cat = categories.find(c => c.key === category);
+    return cat ? cat.icon : Gift;
+  };
+
+  const getCategoryColor = (category) => {
+    const cat = categories.find(c => c.key === category);
+    return cat ? cat.color : '#6b7280';
+  };
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={0.8}
-      points={8.00}
-      maxDistance={15.00}
-      spacing={12.00}
-      showDots={true}
-    >
-      <div className="container py-8 relative z-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Trip Budget & Cost Breakdown</h1>
-        <p className="text-gray-600">Track your expenses and stay within budget</p>
-      </div>
-
-      {/* Budget Overview */}
-      <div className="grid grid-3 gap-6 mb-8">
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-blue-600 mb-2">
-            ${budgetData.totalBudget.toLocaleString()}
-          </div>
-          <div className="text-gray-600">Total Budget</div>
-        </div>
-        
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-red-600 mb-2">
-            ${budgetData.spent.toLocaleString()}
-          </div>
-          <div className="text-gray-600">Total Spent</div>
-        </div>
-        
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-green-600 mb-2">
-            ${budgetData.remaining.toLocaleString()}
-          </div>
-          <div className="text-gray-600">Remaining</div>
-        </div>
-      </div>
-
-      <div className="grid grid-2 gap-8 mb-8">
-        {/* Category Breakdown */}
-        <div className="card">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <PieChart size={20} />
-            Cost Breakdown by Category
-          </h2>
-          
-          <div className="space-y-4">
-            {budgetData.categories.map((category, index) => {
-              const status = getBudgetStatus(category.spent, category.budgeted)
-              const percentage = getPercentage(category.spent, category.budgeted)
-              
-              return (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{category.name}</span>
-                    <span className={`text-sm ${status.color}`}>
-                      ${category.spent} / ${category.budgeted} ({percentage}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="h-3 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${Math.min(percentage, 100)}%`,
-                        backgroundColor: category.color
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>{status.status}</span>
-                    <span>${category.budgeted - category.spent} remaining</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+    <div className="min-h-screen py-8 animate-fade-in-up">
+      <div className="container">
+        {/* Header Section */}
+        <div className="text-center mb-8 animate-fade-in-down">
+          <h1 className="text-4xl font-bold text-white mb-4">
+            <DollarSign className="inline-block mr-3 text-green-400" size={40} />
+            Trip Budget Manager
+          </h1>
+          <p className="text-gray-300 text-lg">Track your expenses and stay within budget</p>
         </div>
 
-        {/* Daily Breakdown */}
-        <div className="card">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <TrendingUp size={20} />
-            Daily Spending
-          </h2>
-          
-          <div className="space-y-3">
-            {budgetData.dailyBreakdown.map((day, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{day.date}</span>
-                  {day.overBudget && (
-                    <AlertTriangle size={16} className="text-red-500" />
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Planned: ${day.planned}
-                    </span>
-                    <span className={`font-medium ${day.overBudget ? 'text-red-600' : 'text-green-600'}`}>
-                      Actual: ${day.actual}
-                    </span>
-                  </div>
-                  {day.overBudget && (
-                    <div className="text-xs text-red-600">
-                      ${day.actual - day.planned} over budget
-                    </div>
-                  )}
-                </div>
+        {/* Budget Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="card hover-lift animate-fade-in-up stagger-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Budget</p>
+                <p className="text-2xl font-bold text-white">${budget.total.toLocaleString()}</p>
               </div>
-            ))}
+              <div className="p-3 bg-blue-500/20 rounded-full">
+                <DollarSign className="text-blue-400" size={24} />
+              </div>
+            </div>
           </div>
-          
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Budget Tips</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Consider free walking tours and museums</li>
-              <li>• Look for lunch specials at restaurants</li>
-              <li>• Use public transportation when possible</li>
-              <li>• Book activities in advance for better rates</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
-      {/* Budget Alerts */}
-      {budgetData.categories.some(cat => getPercentage(cat.spent, cat.budgeted) > 80) && (
-        <div className="card bg-yellow-50 border-yellow-200">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="text-yellow-600 mt-1" />
-            <div>
-              <h3 className="font-semibold text-yellow-900 mb-2">Budget Alerts</h3>
-              <div className="space-y-1 text-sm text-yellow-800">
-                {budgetData.categories
-                  .filter(cat => getPercentage(cat.spent, cat.budgeted) > 80)
-                  .map((cat, index) => (
-                    <div key={index}>
-                      • {cat.name}: {getPercentage(cat.spent, cat.budgeted)}% of budget used
-                    </div>
-                  ))}
+          <div className="card hover-lift animate-fade-in-up stagger-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Spent</p>
+                <p className="text-2xl font-bold text-white">${totalSpent.toLocaleString()}</p>
+              </div>
+              <div className="p-3 bg-red-500/20 rounded-full">
+                <TrendingUp className="text-red-400" size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="card hover-lift animate-fade-in-up stagger-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Remaining</p>
+                <p className={`text-2xl font-bold ${remainingBudget >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  ${remainingBudget.toLocaleString()}
+                </p>
+              </div>
+              <div className={`p-3 rounded-full ${remainingBudget >= 0 ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                <DollarSign className={remainingBudget >= 0 ? 'text-green-400' : 'text-red-400'} size={24} />
+              </div>
+            </div>
+          </div>
+
+          <div className="card hover-lift animate-fade-in-up stagger-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Budget Used</p>
+                <p className="text-2xl font-bold text-white">{budgetPercentage.toFixed(1)}%</p>
+              </div>
+              <div className="p-3 bg-purple-500/20 rounded-full">
+                <TrendingUp className="text-purple-400" size={24} />
               </div>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  </VantaGlobe>
-  )
-}
 
-export default TripBudget
+        {/* Budget Progress Bar */}
+        <div className="card mb-8 animate-fade-in-up stagger-5">
+          <h3 className="text-xl font-semibold text-white mb-4">Budget Progress</h3>
+          <div className="relative">
+            <div className="w-full bg-gray-700 rounded-full h-4">
+              <div 
+                className={`h-4 rounded-full transition-all duration-500 ${
+                  isOverBudget ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-green-500'
+                }`}
+                style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+              ></div>
+            </div>
+            {isOverBudget && (
+              <div className="flex items-center mt-2 text-red-400">
+                <AlertTriangle size={16} className="mr-2" />
+                <span className="text-sm">Over budget by ${Math.abs(remainingBudget).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Budget Setup Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Budget Allocation */}
+          <div className="card animate-fade-in-left">
+            <h3 className="text-xl font-semibold text-white mb-6">Set Your Budget</h3>
+            <div className="space-y-4">
+              {Object.entries(budget).map(([key, value]) => (
+                key !== 'total' && (
+                  <div key={key} className="flex items-center gap-4">
+                    <div className="w-32 text-gray-300">{key.charAt(0).toUpperCase() + key.slice(1)}</div>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) => setBudget({...budget, [key]: parseFloat(e.target.value) || 0})}
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                      placeholder="0"
+                    />
+                  </div>
+                )
+              ))}
+              <div className="flex items-center gap-4 pt-4 border-t border-gray-600">
+                <div className="w-32 text-white font-semibold">Total</div>
+                <div className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white font-semibold">
+                  ${Object.values(budget).reduce((sum, val) => sum + (val || 0), 0).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Expense Categories Chart */}
+          <div className="card animate-fade-in-right">
+            <h3 className="text-xl font-semibold text-white mb-6">Expense Breakdown</h3>
+            <div className="space-y-4">
+              {categories.map((category, index) => {
+                const spent = getCategoryTotal(category.key);
+                const budgeted = budget[category.key] || 0;
+                const percentage = budgeted > 0 ? (spent / budgeted) * 100 : 0;
+                const IconComponent = category.icon;
+                
+                return (
+                  <div key={category.key} className="animate-fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{backgroundColor: `${category.color}20`}}>
+                          <IconComponent size={16} style={{color: category.color}} />
+                        </div>
+                        <span className="text-gray-300">{category.label}</span>
+                      </div>
+                      <span className="text-white font-semibold">${spent.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${Math.min(percentage, 100)}%`,
+                          backgroundColor: percentage > 100 ? '#ef4444' : category.color
+                        }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Budget: ${budgeted.toLocaleString()}</span>
+                      <span>{percentage.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Expenses Section */}
+        <div className="card animate-fade-in-up stagger-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-white">Recent Expenses</h3>
+            <button
+              onClick={() => setShowAddExpense(true)}
+              className="btn btn-primary flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Add Expense
+            </button>
+          </div>
+
+          {/* Add Expense Modal */}
+          {showAddExpense && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-up">
+              <div className="card max-w-md w-full mx-4">
+                <h4 className="text-lg font-semibold text-white mb-4">Add New Expense</h4>
+                <div className="space-y-4">
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={newExpense.amount}
+                    onChange={(e) => setNewExpense({...newExpense, amount: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <select
+                    value={newExpense.category}
+                    onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.key} value={cat.key}>{cat.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={newExpense.description}
+                    onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="date"
+                    value={newExpense.date}
+                    onChange={(e) => setNewExpense({...newExpense, date: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Location (optional)"
+                    value={newExpense.location}
+                    onChange={(e) => setNewExpense({...newExpense, location: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAddExpense}
+                      className="btn btn-primary flex-1"
+                    >
+                      Add Expense
+                    </button>
+                    <button
+                      onClick={() => setShowAddExpense(false)}
+                      className="btn btn-secondary flex-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Expense Modal */}
+          {editingExpense && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in-up">
+              <div className="card max-w-md w-full mx-4">
+                <h4 className="text-lg font-semibold text-white mb-4">Edit Expense</h4>
+                <div className="space-y-4">
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    value={editingExpense.amount}
+                    onChange={(e) => setEditingExpense({...editingExpense, amount: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <select
+                    value={editingExpense.category}
+                    onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.key} value={cat.key}>{cat.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={editingExpense.description}
+                    onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="date"
+                    value={editingExpense.date}
+                    onChange={(e) => setEditingExpense({...editingExpense, date: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Location (optional)"
+                    value={editingExpense.location}
+                    onChange={(e) => setEditingExpense({...editingExpense, location: e.target.value})}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleEditExpense}
+                      className="btn btn-primary flex-1"
+                    >
+                      Update Expense
+                    </button>
+                    <button
+                      onClick={() => setEditingExpense(null)}
+                      className="btn btn-secondary flex-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Expenses List */}
+          <div className="space-y-3">
+            {expenses.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <DollarSign size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No expenses recorded yet. Add your first expense to get started!</p>
+              </div>
+            ) : (
+              expenses.map((expense, index) => {
+                const IconComponent = getCategoryIcon(expense.category);
+                const categoryColor = getCategoryColor(expense.category);
+                
+                return (
+                  <div 
+                    key={expense.id} 
+                    className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700 hover:border-gray-600 transition-all duration-300 animate-fade-in-up"
+                    style={{animationDelay: `${index * 0.05}s`}}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-lg" style={{backgroundColor: `${categoryColor}20`}}>
+                        <IconComponent size={20} style={{color: categoryColor}} />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{expense.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={14} />
+                            {new Date(expense.date).toLocaleDateString()}
+                          </span>
+                          {expense.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin size={14} />
+                              {expense.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white font-semibold">${expense.amount.toLocaleString()}</span>
+                      <button
+                        onClick={() => setEditingExpense(expense)}
+                        className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExpense(expense.id)}
+                        className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TripBudget;
