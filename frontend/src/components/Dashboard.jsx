@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, MapPin, Calendar, DollarSign, TrendingUp, Sparkles } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
-import VantaGlobe from './VantaGlobe'
 
 const Dashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -18,7 +17,7 @@ const Dashboard = () => {
       destination: 'Paris, Rome, Barcelona',
       dates: 'Mar 15 - Mar 25, 2024',
       budget: '$2,500',
-      image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1665131439247-287a396b4edf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       progress: 75
     },
     {
@@ -27,7 +26,7 @@ const Dashboard = () => {
       destination: 'Tokyo, Seoul, Bangkok',
       dates: 'Jun 10 - Jun 20, 2024',
       budget: '$3,200',
-      image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1606823093907-09fba87f5d38?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       progress: 45
     }
   ]
@@ -64,18 +63,8 @@ const Dashboard = () => {
   ]
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={0.8}
-      points={8.00}
-      maxDistance={15.00}
-      spacing={12.00}
-      showDots={true}
-    >
-      <AnimatedPage>
-        <div className="container py-8 relative z-10">
+    <AnimatedPage>
+      <div className="container py-8 relative z-10">
         {/* Hero Section */}
         <div className="mb-12 text-center animate-fade-in-up">
           <div className="relative inline-block">
@@ -121,21 +110,19 @@ const Dashboard = () => {
                 View All →
               </Link>
             </div>
-            
             {upcomingTrips.length > 0 ? (
               <div className="space-y-6">
                 {upcomingTrips.map((trip, index) => (
                   <div key={trip.id} className={`group hover-lift animate-fade-in-up stagger-${index + 1}`}>
-                    <div className="relative overflow-hidden rounded-2xl">
-                      <img 
-                        src={trip.image} 
+                    <div className="overflow-hidden rounded-2xl">
+                      <img
+                        src={trip.image}
                         alt={trip.title}
                         className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <div className="p-4">
                         <h3 className="text-xl font-bold mb-2">{trip.title}</h3>
-                        <div className="flex items-center gap-4 text-sm mb-3">
+                        <div className="flex items-center flex-wrap gap-3 text-sm mb-3">
                           <span className="flex items-center gap-1">
                             <MapPin size={14} />
                             {trip.destination}
@@ -149,7 +136,7 @@ const Dashboard = () => {
                           <span className="font-semibold">{trip.budget}</span>
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-2 bg-white/30 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-1000"
                                 style={{ width: `${trip.progress}%` }}
                               ></div>
@@ -192,7 +179,7 @@ const Dashboard = () => {
                         <MapPin size={20} className="text-blue-600" />
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{dest.name}</div>
+                        <div className="font-semibold text-white">{dest.name}</div>
                         <div className="text-sm text-gray-500">{dest.country}</div>
                       </div>
                     </div>
@@ -210,9 +197,9 @@ const Dashboard = () => {
         {/* Quick Actions */}
         <div className="grid grid-3 gap-8">
           {quickActions.map((action, index) => (
-            <Link 
+            <Link
               key={index}
-              to={action.link} 
+              to={action.link}
               className={`card hover-lift text-center group animate-scale-in stagger-${index + 1}`}
             >
               <div className={`w-16 h-16 ${action.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
@@ -226,8 +213,7 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
-      </AnimatedPage>
-    </VantaGlobe>
+    </AnimatedPage>
   )
 }
 
