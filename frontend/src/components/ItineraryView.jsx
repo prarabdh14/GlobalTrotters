@@ -83,11 +83,11 @@ const ItineraryView = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="btn btn-outline">
+            <button className="btn btn-outline text-white/80 border-white/30 hover:text-blue-300 hover:border-blue-400">
               <Share2 size={16} />
               Share
             </button>
-            <button className="btn btn-outline">
+            <button className="btn btn-outline text-white/80 border-white/30 hover:text-blue-300 hover:border-blue-400">
               <Copy size={16} />
               Copy Trip
             </button>
@@ -117,11 +117,11 @@ const ItineraryView = () => {
       {viewMode === 'timeline' && (
         <div className="space-y-8">
           {itinerary.days.map((day, index) => (
-            <div key={index} className="card">
+            <div key={index} className="card bg-white border border-gray-200 text-gray-900">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold">{formatDate(day.date)}</h2>
-                  <p className="text-gray-600 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-900">{formatDate(day.date)}</h2>
+                  <p className="text-gray-700 flex items-center gap-2">
                     <MapPin size={16} />
                     {day.city}
                   </p>
@@ -130,19 +130,19 @@ const ItineraryView = () => {
                   <div className="text-lg font-semibold text-green-600">
                     ${getTotalDayCost(day.activities)}
                   </div>
-                  <div className="text-sm text-gray-500">Total for day</div>
+                  <div className="text-sm text-gray-600">Total for day</div>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {day.activities.map((activity, actIndex) => (
-                  <div key={actIndex} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm font-medium text-blue-600 min-w-[80px]">
+                  <div key={actIndex} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg">
+                    <div className="text-sm font-medium text-blue-700 min-w-[80px]">
                       {activity.time}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium mb-1">{activity.name}</h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <h3 className="font-medium mb-1 text-gray-900">{activity.name}</h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-700">
                         <span className="flex items-center gap-1">
                           <Clock size={14} />
                           {activity.duration}
