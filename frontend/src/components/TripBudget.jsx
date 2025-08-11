@@ -262,7 +262,7 @@ const TripBudget = () => {
                     </p>
                   )}
                 </div>
-              </div>
+      </div>
               <ChevronDown 
                 className={`text-gray-400 transition-transform duration-300 ${showTripSelector ? 'rotate-180' : ''}`} 
                 size={20} 
@@ -300,7 +300,7 @@ const TripBudget = () => {
             )}
           </div>
         </div>
-
+        
         {!selectedTrip ? (
           <div className="text-center py-12">
             <p className="text-gray-400">Please select a trip to manage its budget</p>
@@ -316,8 +316,8 @@ const TripBudget = () => {
               <p className="text-gray-300 text-lg">
                 Managing budget for: <span className="text-blue-400 font-semibold">{selectedTrip.name}</span>
               </p>
-            </div>
-
+        </div>
+        
             {/* Budget Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="card hover-lift animate-fade-in-up stagger-1">
@@ -328,9 +328,9 @@ const TripBudget = () => {
                   </div>
                   <div className="p-3 bg-blue-500/20 rounded-full">
                     <DollarSign className="text-blue-400" size={24} />
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
 
               <div className="card hover-lift animate-fade-in-up stagger-2">
                 <div className="flex items-center justify-between">
@@ -368,8 +368,8 @@ const TripBudget = () => {
                     <Clock className="text-purple-400" size={24} />
                   </div>
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Budget Progress Bar */}
             <div className="card mb-8 animate-fade-in-up stagger-5">
@@ -447,7 +447,7 @@ const TripBudget = () => {
                     <div className="text-center py-8 text-gray-400">
                       <BarChart3 size={48} className="mx-auto mb-4 opacity-50" />
                       <p>No daily spending data yet</p>
-                    </div>
+          </div>
                   ) : (
                     dailySpending.map((day, index) => {
                       const maxAmount = Math.max(...dailySpending.map(d => d.amount));
@@ -481,9 +481,9 @@ const TripBudget = () => {
                       );
                     })
                   )}
-                </div>
-              </div>
-            </div>
+          </div>
+        </div>
+      </div>
 
             {/* Overbudget Alerts */}
             {overbudgetDays.length > 0 && (
@@ -716,11 +716,11 @@ const TripBudget = () => {
                         >
                           Cancel
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
               {/* Expenses List */}
               <div className="space-y-3">
