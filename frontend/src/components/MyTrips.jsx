@@ -194,7 +194,7 @@ const MyTrips = () => {
               />
             </div>
             <div className="flex gap-3 flex-wrap md:flex-nowrap items-stretch">
-              {['all', 'upcoming', 'planning', 'completed', 'ai-generated'].map((status) => (
+              {['all', 'upcoming', 'planning', 'completed'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
@@ -251,13 +251,7 @@ const MyTrips = () => {
                       {statusConfig.label}
                     </div>
 
-                    {/* AI Generated Badge */}
-                    {trip.isAiGenerated && (
-                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white backdrop-blur-sm">
-                        <Sparkles size={14} className="inline mr-1" />
-                        AI
-                      </div>
-                    )}
+
 
                     {/* Progress Bar */}
                     <div className="absolute bottom-4 left-4 right-4">
