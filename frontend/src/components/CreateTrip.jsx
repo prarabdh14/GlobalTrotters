@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, FileText, Upload } from 'lucide-react'
+import { Calendar, MapPin, FileText, Upload, DollarSign } from 'lucide-react'
 import { tripsApi } from '../api/trips'
 
 const CreateTrip = () => {
@@ -10,6 +10,7 @@ const CreateTrip = () => {
     startDate: '',
     endDate: '',
     description: '',
+    budget: '',
     coverPhoto: null
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -26,6 +27,7 @@ const CreateTrip = () => {
         description: formData.description || '—',
         startDate: formData.startDate,
         endDate: formData.endDate,
+        budget: parseFloat(formData.budget) || 0,
         coverImg: null,
       }
       const { trip } = await tripsApi.create(payload)
@@ -121,6 +123,24 @@ const CreateTrip = () => {
                 rows="4"
                 placeholder="Describe your trip, what you're looking forward to, or any special occasions..."
               />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                <DollarSign size={16} className="inline mr-2" />
+                Total Budget (₹)
+              </label>
+              <input
+                type="number"
+                name="budget"
+                value={formData.budget}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Enter your total trip budget"
+                min="0"
+                step="100"
+              />
+              <p className="text-sm text-gray-500 mt-2">Set your total budget for this trip</p>
             </div>
 
             <div className="form-group">
