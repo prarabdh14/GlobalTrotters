@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginScreen from './components/LoginScreen'
 import RegistrationScreen from './components/RegistrationScreen'
+import GoogleAuthCallback from './components/GoogleAuthCallback'
 import Dashboard from './components/Dashboard'
 import CreateTrip from './components/CreateTrip'
 import MyTrips from './components/MyTrips'
@@ -25,23 +26,36 @@ import { getAuthToken } from './api/client'
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const init = async () => {
       try {
-        if (getAuthToken()) {
+        const token = getAuthToken();
+        if (token) {
+          console.log('Found auth token, validating...');
           const { user } = await authApi.me()
           setCurrentUser(user)
           setIsAuthenticated(true)
+          console.log('Authentication successful for user:', user.name);
+        } else {
+          console.log('No auth token found');
         }
-      } catch {
-        // token invalid or not present; remain logged out
+      } catch (error) {
+        console.error('Authentication failed:', error);
+        // Clear invalid token and user data
+        authApi.logout();
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+      } finally {
+        setIsLoading(false);
       }
     }
     init()
   }, [])
 
   const handleLogin = (userData) => {
+    console.log('Login successful for user:', userData.name);
     setIsAuthenticated(true)
     setCurrentUser(userData)
   }
@@ -52,6 +66,19 @@ function App() {
     setCurrentUser(null)
   }
 
+  if (isLoading) {
+    return (
+      <VantaGlobe>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-white">Loading...</p>
+          </div>
+        </div>
+      </VantaGlobe>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <VantaGlobe>
@@ -59,6 +86,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginScreen onLogin={handleLogin} />} />
             <Route path="/register" element={<RegistrationScreen onLogin={handleLogin} />} />
+            <Route path="/auth/google/callback" element={<GoogleAuthCallback onLogin={handleLogin} />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>

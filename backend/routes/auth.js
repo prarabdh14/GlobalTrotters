@@ -140,7 +140,7 @@ router.post('/google', async (req, res) => {
         data: {
           email,
           name,
-          profilePicture: picture,
+          profileImg: picture,
           googleId,
           isEmailVerified: true
         }
@@ -151,7 +151,7 @@ router.post('/google', async (req, res) => {
         where: { id: user.id },
         data: {
           googleId,
-          profilePicture: picture,
+          profileImg: picture,
           isEmailVerified: true
         }
       });
@@ -171,13 +171,126 @@ router.post('/google', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        profilePicture: user.profilePicture
+        profileImg: user.profileImg
       }
     });
 
   } catch (error) {
     console.error('Google OAuth error:', error);
     res.status(500).json({ error: 'Google authentication failed' });
+  }
+});
+
+// Google OAuth Callback Route (for redirect flow)
+router.get('/google/callback', async (req, res) => {
+  try {
+    const { code, error } = req.query;
+    
+    if (error) {
+      console.error('Google OAuth error:', error);
+      return res.status(400).json({ error: `OAuth error: ${error}` });
+    }
+    
+    if (!code) {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+
+    console.log('Received authorization code, exchanging for tokens...');
+
+    // Exchange authorization code for tokens
+    const { OAuth2Client } = require('google-auth-library');
+    const { google } = require('googleapis');
+    
+    const oauth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+    
+    // Get user info from Google
+    oauth2Client.setCredentials(tokens);
+    const oauth2 = google.oauth2('v2');
+    const userInfo = await oauth2.userinfo.get({ auth: oauth2Client });
+    
+    const { email, name, picture } = userInfo.data;
+    const googleId = userInfo.data.id;
+
+    console.log('User info received from Google:', { email, name, googleId });
+
+    // Check if user exists
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { googleId }
+        ]
+      }
+    });
+
+    if (!user) {
+      // Create new user
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          profileImg: picture,
+          googleId,
+          isEmailVerified: true
+        }
+      });
+      console.log('Created new user:', user.id);
+    } else if (!user.googleId) {
+      // Link existing user with Google account
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId,
+          profileImg: picture,
+          isEmailVerified: true
+        }
+      });
+      console.log('Linked existing user with Google:', user.id);
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    console.log('Authentication successful for user:', user.id);
+
+    res.json({
+      message: 'Google authentication successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profileImg: user.profileImg
+      }
+    });
+
+  } catch (error) {
+    console.error('Google OAuth callback error:', error);
+    
+    // Handle specific OAuth errors
+    if (error.message.includes('invalid_grant')) {
+      return res.status(400).json({ 
+        error: 'Authorization code has expired or was already used. Please try signing in again.' 
+      });
+    }
+    
+    if (error.message.includes('invalid_client')) {
+      return res.status(400).json({ 
+        error: 'Invalid client configuration. Please check your Google OAuth settings.' 
+      });
+    }
+    
+    res.status(500).json({ error: 'Failed to complete Google authentication: ' + error.message });
   }
 });
 
