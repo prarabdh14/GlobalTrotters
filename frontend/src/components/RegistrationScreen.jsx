@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, User, Mail, Phone, MapPin } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const RegistrationScreen = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -31,8 +32,18 @@ const RegistrationScreen = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={1.00}
+      points={10.00}
+      maxDistance={20.00}
+      spacing={15.00}
+      showDots={true}
+    >
+      <div className="min-h-screen flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-2 mb-4">
             <Globe size={32} className="text-blue-600" />
@@ -150,7 +161,8 @@ const RegistrationScreen = ({ onLogin }) => {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </VantaGlobe>
   )
 }
 

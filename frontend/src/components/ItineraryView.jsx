@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, MapPin, Clock, DollarSign, Share2, Copy, Edit } from 'lucide-react'
+import VantaGlobe from './VantaGlobe'
 
 const ItineraryView = () => {
   const { id } = useParams()
@@ -57,7 +58,17 @@ const ItineraryView = () => {
   }
 
   return (
-    <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <div className="container py-8 relative z-10">
       <div className="mb-8">
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -160,6 +171,7 @@ const ItineraryView = () => {
         </div>
       )}
     </div>
+  </VantaGlobe>
   )
 }
 

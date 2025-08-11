@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, MapPin, Calendar, DollarSign, TrendingUp, Sparkles } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
+import VantaGlobe from './VantaGlobe'
 
 const Dashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -63,8 +64,18 @@ const Dashboard = () => {
   ]
 
   return (
-    <AnimatedPage>
-      <div className="container py-8">
+    <VantaGlobe
+      color={0x3f51b5}
+      color2={0xffffff}
+      backgroundColor={0x0a0a0a}
+      size={0.8}
+      points={8.00}
+      maxDistance={15.00}
+      spacing={12.00}
+      showDots={true}
+    >
+      <AnimatedPage>
+        <div className="container py-8 relative z-10">
         {/* Hero Section */}
         <div className="mb-12 text-center animate-fade-in-up">
           <div className="relative inline-block">
@@ -215,7 +226,8 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
-    </AnimatedPage>
+      </AnimatedPage>
+    </VantaGlobe>
   )
 }
 
