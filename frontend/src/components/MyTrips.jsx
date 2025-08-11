@@ -13,7 +13,7 @@ const MyTrips = () => {
       startDate: '2024-03-15',
       endDate: '2024-03-25',
       status: 'upcoming',
-      image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop',
+      image: 'https://images.unsplash.com/photo-1665131439247-287a396b4edf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       progress: 85
     },
     {
@@ -114,24 +114,24 @@ const MyTrips = () => {
         <div className="card mb-8 animate-fade-in-up stagger-1">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none z-20" />
               <input
                 type="text"
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-12"
+                className="form-input relative z-0 h-12 pl-14 bg-white border border-gray-300 text-gray-800 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-500 shadow-sm"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3 flex-wrap md:flex-nowrap items-stretch">
               {['all', 'upcoming', 'planning', 'completed'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
-                    filter === status 
-                      ? 'bg-blue-600 text-white shadow-lg' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  className={`px-4 h-12 rounded-xl font-medium transition-all duration-300 border ${
+                    filter === status
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                      : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)}
