@@ -5,7 +5,7 @@ import AnimatedPage from './AnimatedPage'
 import VantaGlobe from './VantaGlobe'
 
 const MyTrips = () => {
-  const [trips] = useState([
+  const seedTrips = [
     {
       id: 1,
       title: 'European Adventure',
@@ -36,7 +36,17 @@ const MyTrips = () => {
       image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=200&fit=crop',
       progress: 100
     }
-  ])
+  ]
+
+  const [trips, setTrips] = useState(() => {
+    try {
+      const stored = localStorage.getItem('userTrips')
+      const userTrips = stored ? JSON.parse(stored) : []
+      return [...userTrips, ...seedTrips]
+    } catch {
+      return [...seedTrips]
+    }
+  })
 
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')

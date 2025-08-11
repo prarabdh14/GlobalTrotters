@@ -8,6 +8,7 @@ import MyTrips from './components/MyTrips'
 import ItineraryBuilder from './components/ItineraryBuilder'
 import ItineraryView from './components/ItineraryView'
 import CitySearch from './components/CitySearch'
+import CityDetails from './components/CityDetails'
 import ActivitySearch from './components/ActivitySearch'
 import TripBudget from './components/TripBudget'
 import TripCalendar from './components/TripCalendar'
@@ -80,6 +81,7 @@ function App() {
             <Route path="/budget" element={<TripBudget />} />
             <Route path="/trip/:id/calendar" element={<TripCalendar />} />
             <Route path="/search/cities" element={<CitySearch />} />
+            <Route path="/city/:id" element={<CityDetails />} />
             <Route path="/search/activities" element={<ActivitySearch />} />
             <Route path="/profile" element={<UserProfile user={currentUser} />} />
             <Route path="/admin" element={<AdminDashboard />} />

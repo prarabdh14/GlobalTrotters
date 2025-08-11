@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Search, MapPin, Star, DollarSign, Users } from 'lucide-react'
+import { Search, MapPin, Star, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import VantaGlobe from './VantaGlobe'
 
 const CitySearch = () => {
@@ -9,6 +10,8 @@ const CitySearch = () => {
     costLevel: '',
     popularity: ''
   })
+  const [shortlisted, setShortlisted] = useState([])
+  const navigate = useNavigate()
 
   const cities = [
     {
@@ -19,7 +22,7 @@ const CitySearch = () => {
       costIndex: 'High',
       popularity: 4.8,
       trips: 1250,
-      image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=300&h=200&fit=crop',
+      image: 'https://plus.unsplash.com/premium_photo-1729068649640-4d45d0a4db12?q=80&w=2128&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       description: 'The City of Light, famous for its art, fashion, and cuisine'
     },
     {
@@ -87,6 +90,34 @@ const CitySearch = () => {
     
     return matchesSearch && matchesRegion && matchesCost
   })
+
+  const handleAddToTrip = (city) => {
+    if (!shortlisted.includes(city.id)) {
+      const next = [...shortlisted, city.id]
+      setShortlisted(next)
+      try {
+        localStorage.setItem('shortlistedCities', JSON.stringify(next))
+        const storedTripsRaw = localStorage.getItem('userTrips')
+        const storedTrips = storedTripsRaw ? JSON.parse(storedTripsRaw) : []
+        const start = new Date()
+        const end = new Date()
+        end.setDate(start.getDate() + 3)
+        const newTrip = {
+          id: Date.now(),
+          title: `${city.name} Trip`,
+          destinations: [city.name],
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          status: 'planning',
+          image: city.image,
+          progress: 10
+        }
+        localStorage.setItem('userTrips', JSON.stringify([newTrip, ...storedTrips]))
+      } catch {}
+    }
+  }
+
+  const openDetails = (city) => navigate(`/city/${city.id}`, { state: { city } })
 
   const getCostColor = (costIndex) => {
     switch (costIndex) {
@@ -159,8 +190,17 @@ const CitySearch = () => {
       </div>
 
       <div className="grid grid-2 gap-6">
-        {filteredCities.map(city => (
-          <div key={city.id} className="card hover:shadow-lg transition-shadow">
+        {filteredCities.map(city => {
+          const isAdded = shortlisted.includes(city.id)
+          return (
+          <div
+            key={city.id}
+            className="card hover:shadow-lg transition-shadow cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={() => openDetails(city)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetails(city) } }}
+          >
             <div className="relative mb-4">
               <img 
                 src={city.image} 
@@ -195,15 +235,15 @@ const CitySearch = () => {
             <p className="text-gray-600 text-sm mb-4">{city.description}</p>
 
             <div className="flex gap-2">
-              <button className="btn btn-primary flex-1">
-                Add to Trip
+              <button onClick={(e) => { e.stopPropagation(); handleAddToTrip(city) }} disabled={isAdded} className={`btn flex-1 ${isAdded ? 'btn-outline text-green-600 border-green-300 cursor-default' : 'btn-primary'}`}>
+                {isAdded ? 'Added' : 'Add to Trip'}
               </button>
-              <button className="btn btn-outline">
+              <button onClick={(e) => { e.stopPropagation(); openDetails(city) }} className="btn btn-outline">
                 View Details
               </button>
             </div>
           </div>
-        ))}
+        )})}
       </div>
 
       {filteredCities.length === 0 && (
@@ -213,6 +253,8 @@ const CitySearch = () => {
           <p className="text-gray-600">Try adjusting your search or filters</p>
         </div>
       )}
+
+      {/* Details handled by /city/:id route */}
     </div>
   </VantaGlobe>
   )
