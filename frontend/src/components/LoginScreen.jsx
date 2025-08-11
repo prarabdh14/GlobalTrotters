@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
+import { setAuthToken } from '../api/client'
 
 // Google OAuth
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -26,7 +27,10 @@ const LoginScreen = ({ onLogin }) => {
       console.log('Setting isVisible to true - starting slide-in animation')
       setIsVisible(true)
     }, 100)
-    return () => clearTimeout(timer)
+
+    return () => {
+      clearTimeout(timer)
+    }
   }, [])
 
   const handleSubmit = async (e) => {
@@ -35,11 +39,19 @@ const LoginScreen = ({ onLogin }) => {
     setError(null)
 
     try {
-      const { user } = await authApi.login({
+      const response = await authApi.login({
         email: formData.email,
         password: formData.password
       })
-      onLogin(user)
+      console.log('Login response:', response);
+      
+      // Set the auth token
+      if (response.token) {
+        setAuthToken(response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      
+      onLogin(response.user)
     } catch (err) {
       setError(err.message || 'Failed to sign in')
     } finally {
@@ -59,30 +71,28 @@ const LoginScreen = ({ onLogin }) => {
       setIsLoading(true)
       setError(null)
 
-      // Initialize Google Sign-In
-      if (!window.google) {
-        setError('Google Sign-In not available')
+      // Check if client ID is configured
+      if (!GOOGLE_CLIENT_ID) {
+        setError('Google Sign-In is not configured. Please contact support.')
+        setIsLoading(false)
         return
       }
 
-      const google = window.google
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          try {
-            const { user } = await authApi.googleLogin(response.credential)
-            onLogin(user)
-          } catch (err) {
-            setError(err.message || 'Google sign-in failed')
-          } finally {
-            setIsLoading(false)
-          }
-        }
-      })
+      // Redirect to Google OAuth consent screen
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${GOOGLE_CLIENT_ID}&` +
+        `redirect_uri=${encodeURIComponent('http://localhost:5173/auth/google/callback')}&` +
+        `response_type=code&` +
+        `scope=${encodeURIComponent('openid email profile')}&` +
+        `access_type=offline&` +
+        `prompt=consent`
 
-      google.accounts.id.prompt()
+      console.log('Redirecting to Google OAuth:', googleAuthUrl)
+      window.location.href = googleAuthUrl
+      
     } catch (err) {
-      setError('Google sign-in failed')
+      console.error('Google Sign-In error:', err)
+      setError('Google Sign-In failed. Please try again.')
       setIsLoading(false)
     }
   }

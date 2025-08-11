@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, Plus, ExternalLink } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, Plus, ExternalLink, Globe } from 'lucide-react';
 import { tripsApi } from '../api/trips';
 import { calendarApi } from '../api/calendar';
+import VantaGlobe from './VantaGlobe';
 
 const TripCalendar = () => {
   const [trips, setTrips] = useState([]);
+  const [tripsLoaded, setTripsLoaded] = useState(false);
   const [googleEvents, setGoogleEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,20 +14,36 @@ const TripCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [showGoogleCalendar, setShowGoogleCalendar] = useState(false);
 
   useEffect(() => {
-    fetchTrips();
-    checkGoogleConnection();
+    const initializeCalendar = async () => {
+      try {
+        await fetchTrips();
+        await checkGoogleConnection();
+      } catch (err) {
+        console.error('Error initializing calendar:', err);
+        setError('Failed to load calendar data. Please try refreshing the page.');
+      }
+    };
+
+    initializeCalendar();
   }, []);
 
   const fetchTrips = async () => {
     try {
       setLoading(true);
-      const tripsData = await tripsApi.list();
+      const response = await tripsApi.list();
+      // Handle both array and object responses
+      const tripsData = Array.isArray(response) ? response : (response.trips || response.data || []);
+      console.log('Trips data:', tripsData);
       setTrips(tripsData);
+      setTripsLoaded(true);
     } catch (err) {
       setError('Failed to load trips');
       console.error('Error fetching trips:', err);
+      setTrips([]); // Set empty array on error
+      setTripsLoaded(true);
     } finally {
       setLoading(false);
     }
@@ -38,10 +56,12 @@ const TripCalendar = () => {
       
       if (status.isConnected && !status.needsReauth) {
         fetchGoogleEvents();
+        setShowGoogleCalendar(true); // Show Google Calendar when connected
       }
     } catch (err) {
       console.error('Error checking Google connection:', err);
       setIsGoogleConnected(false);
+      // Don't set error here as it's not critical for the main functionality
     }
   };
 
@@ -51,6 +71,7 @@ const TripCalendar = () => {
       setGoogleEvents(response.events || []);
     } catch (err) {
       console.error('Error fetching Google events:', err);
+      // Don't set error here as it's not critical for the main functionality
     }
   };
 
@@ -72,6 +93,16 @@ const TripCalendar = () => {
     } catch (err) {
       setError('Failed to add trip to Google Calendar');
     }
+  };
+
+  const getGoogleCalendarUrl = () => {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    return `https://calendar.google.com/calendar/embed?src=primary&ctz=local&mode=MONTH&year=${currentYear}&month=${currentMonth}`;
+  };
+
+  const toggleCalendarView = () => {
+    setShowGoogleCalendar(!showGoogleCalendar);
   };
 
   const getDaysInMonth = (date) => {
@@ -98,9 +129,13 @@ const TripCalendar = () => {
   };
 
   const getTripsForDate = (date) => {
-    if (!date) return [];
+    if (!date || !Array.isArray(trips)) {
+      console.log('getTripsForDate: trips is not an array:', trips);
+      return [];
+    }
     
     const dateStr = date.toISOString().split('T')[0];
+    console.log('getTripsForDate: filtering trips for date:', dateStr, 'Total trips:', trips.length);
     return trips.filter(trip => {
       const startDate = new Date(trip.start_date).toISOString().split('T')[0];
       const endDate = new Date(trip.end_date).toISOString().split('T')[0];
@@ -144,42 +179,47 @@ const TripCalendar = () => {
     return days[dayIndex];
   };
 
-  if (loading) {
+  if (loading || !tripsLoaded) {
     return (
-      <div className="container py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Calendar size={48} className="text-blue-500 mx-auto mb-4" />
-            <p className="text-gray-600">Loading calendar...</p>
+      <VantaGlobe>
+        <div className="container py-8 relative z-10">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Calendar size={48} className="text-blue-500 mx-auto mb-4" />
+              <p className="text-gray-600">Loading calendar...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </VantaGlobe>
     );
   }
 
   if (error) {
     return (
-      <div className="container py-8">
-        <div className="card bg-red-50 border-red-200">
-          <div className="text-red-800">
-            <h4 className="font-semibold">Error</h4>
-            <p>{error}</p>
+      <VantaGlobe>
+        <div className="container py-8 relative z-10">
+          <div className="card bg-red-50 border-red-200">
+            <div className="text-red-800">
+              <h4 className="font-semibold">Error</h4>
+              <p>{error}</p>
+            </div>
           </div>
         </div>
-      </div>
+      </VantaGlobe>
     );
   }
 
   const days = getDaysInMonth(currentDate);
 
   return (
-    <div className="container py-8">
+    <VantaGlobe>
+      <div className="container py-8 relative z-10">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <Calendar className="text-blue-500" size={32} />
+          <Calendar className="text-blue-400" size={32} />
           <div>
-            <h1 className="text-3xl font-bold">Trip Calendar</h1>
-            <p className="text-gray-600">View your trips in a calendar format</p>
+            <h1 className="text-3xl font-bold text-white">Trip Calendar</h1>
+            <p className="text-white/80">View your trips in a calendar format</p>
           </div>
         </div>
       </div>
@@ -198,13 +238,31 @@ const TripCalendar = () => {
           </div>
           <div className="flex gap-2">
             {isGoogleConnected ? (
-              <button
-                onClick={() => fetchGoogleEvents()}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                <ExternalLink size={16} className="inline mr-2" />
-                Refresh Events
-              </button>
+              <>
+                <button
+                  onClick={toggleCalendarView}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  {showGoogleCalendar ? (
+                    <>
+                      <Calendar size={16} className="inline mr-2" />
+                      Show App Calendar
+                    </>
+                  ) : (
+                    <>
+                      <Globe size={16} className="inline mr-2" />
+                      Show Google Calendar
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => fetchGoogleEvents()}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <ExternalLink size={16} className="inline mr-2" />
+                  Refresh Events
+                </button>
+              </>
             ) : (
               <button
                 onClick={connectGoogleCalendar}
@@ -228,9 +286,35 @@ const TripCalendar = () => {
         </div>
       </div>
 
-      <div className="grid grid-1 lg:grid-2 gap-8">
-        {/* Calendar View */}
+      {showGoogleCalendar && isGoogleConnected ? (
+        /* Google Calendar View */
         <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold">Google Calendar</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleCalendarView}
+                className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors"
+              >
+                <Calendar size={14} className="inline mr-1" />
+                Switch to App Calendar
+              </button>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg overflow-hidden" style={{ height: '600px' }}>
+            <iframe
+              src={getGoogleCalendarUrl()}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title="Google Calendar"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Calendar View */}
+          <div className="card">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Calendar</h2>
             <div className="flex items-center gap-2">
@@ -339,7 +423,7 @@ const TripCalendar = () => {
                     
                     <p className="text-gray-600 text-sm mb-3">{trip.description}</p>
                     
-                    <div className="grid grid-2 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center gap-2">
                         <Clock size={16} className="text-gray-400" />
                         <span>
@@ -380,7 +464,9 @@ const TripCalendar = () => {
           )}
         </div>
       </div>
-    </div>
+      )}
+      </div>
+    </VantaGlobe>
   );
 };
 

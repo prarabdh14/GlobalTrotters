@@ -21,7 +21,7 @@ export const authApi = {
 
   // Logout (client-side only)
   logout: () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('gt_token');
     localStorage.removeItem('user');
   }
 }; 
