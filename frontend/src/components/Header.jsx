@@ -15,6 +15,22 @@ const Header = ({ user, onLogout }) => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const navigationItems = [
+    { path: '/dashboard', label: 'Dashboard' },
+    { path: '/my-trips', label: 'My Trips' },
+    { path: '/search/cities', label: 'Explore' },
+    { path: '/ai-itinerary', label: 'AI Planner' },
+    { path: '/budget', label: 'Budget' },
+    { path: '/profile', label: 'Profile' }
+  ]
+
+  const isActive = (path) => {
+    if (path === '/search/cities') {
+      return location.pathname.includes('/search')
+    }
+    return location.pathname === path
+  }
+
   return (
     <header className={`header transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
       <div className="container">
@@ -28,57 +44,19 @@ const Header = ({ user, onLogout }) => {
             <span className="gradient-text">GlobeTrotter</span>
           </Link>
           
-          {/* Main Navigation */}
-          <nav className="hidden md:block animate-fade-in-down">
+          {/* Desktop Navigation */}
+          <nav className="animate-fade-in-down">
             <ul className="nav-links">
-              <li className="animate-fade-in-down stagger-1">
-                <Link 
-                  to="/dashboard" 
-                  className={location.pathname === '/dashboard' ? 'active' : ''}
-                >
-                  Dashboard
-                </Link>
-              </li>
-              <li className="animate-fade-in-down stagger-2">
-                <Link 
-                  to="/my-trips" 
-                  className={location.pathname === '/my-trips' ? 'active' : ''}
-                >
-                  My Trips
-                </Link>
-              </li>
-              <li className="animate-fade-in-down stagger-3">
-                <Link 
-                  to="/search/cities" 
-                  className={location.pathname.includes('/search') ? 'active' : ''}
-                >
-                  Explore
-                </Link>
-              </li>
-              <li className="animate-fade-in-down stagger-4">
-                <Link 
-                  to="/ai-itinerary" 
-                  className={location.pathname === '/ai-itinerary' ? 'active' : ''}
-                >
-                  AI Planner
-                </Link>
-              </li>
-              <li className="animate-fade-in-down stagger-5">
-                <Link 
-                  to="/budget" 
-                  className={location.pathname === '/budget' ? 'active' : ''}
-                >
-                  Budget
-                </Link>
-              </li>
-              <li className="animate-fade-in-down stagger-6">
-                <Link 
-                  to="/profile" 
-                  className={location.pathname === '/profile' ? 'active' : ''}
-                >
-                  Profile
-                </Link>
-              </li>
+              {navigationItems.map((item, index) => (
+                <li key={item.path} className={`animate-fade-in-down stagger-${index + 1}`}>
+                  <Link 
+                    to={item.path} 
+                    className={isActive(item.path) ? 'active' : ''}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
@@ -87,7 +65,7 @@ const Header = ({ user, onLogout }) => {
             {/* Logout Button */}
             <button 
               onClick={onLogout}
-              className="logout-btn hidden md:flex items-center gap-2"
+              className="logout-btn flex items-center gap-2"
               title="Logout"
             >
               <LogOut size={18} />
