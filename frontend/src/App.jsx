@@ -85,6 +85,7 @@ function App() {
             <Route path="/city/:id" element={<CityDetails />} />
             <Route path="/search/activities" element={<ActivitySearch />} />
             <Route path="/ai-itinerary" element={<AiItineraryGenerator />} />
+            <Route path="/calendar" element={<TripCalendar />} />
             <Route path="/profile" element={<UserProfile user={currentUser} />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

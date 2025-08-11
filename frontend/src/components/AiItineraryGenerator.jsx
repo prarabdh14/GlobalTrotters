@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, DollarSign, Users, Sparkles, Loader2, Search, RefreshCw } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Users, Sparkles, Loader2, Search, RefreshCw, Save, Check } from 'lucide-react';
 import { aiApi } from '../api/ai';
+import { tripsApi } from '../api/trips';
 
 const AiItineraryGenerator = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,8 @@ const AiItineraryGenerator = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   const interests = [
     'Museums & Culture', 'Nature & Outdoors', 'Food & Dining', 
@@ -144,6 +147,39 @@ const AiItineraryGenerator = () => {
       setError(err.message || 'Failed to regenerate itinerary');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToMyTrips = async () => {
+    if (!itinerary || !itinerary.responseJson) return;
+    
+    setIsSaving(true);
+    setSavedSuccess(false);
+    
+    try {
+      const tripData = {
+        name: `${itinerary.source} to ${itinerary.destination}`,
+        description: `AI-generated itinerary for ${itinerary.responseJson.trip_summary.route}`,
+        startDate: itinerary.startDate,
+        endDate: itinerary.endDate,
+        coverImg: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&h=200&fit=crop'
+      };
+
+      // Create the trip
+      const response = await tripsApi.create(tripData);
+      const newTrip = response.trip; // The backend returns { message, trip }
+      
+      // For now, we'll just create the trip without stops
+      // The AI itinerary data is stored in the responseJson field
+      console.log('Trip created successfully:', newTrip);
+
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving to MyTrips:', error);
+      setError('Failed to save itinerary to MyTrips');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -500,6 +536,42 @@ const AiItineraryGenerator = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Save to MyTrips Button */}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-lg">Ready to Save?</h4>
+                        <p className="text-gray-600 text-sm">Add this itinerary to your MyTrips for easy access</p>
+                      </div>
+                      <button
+                        onClick={handleSaveToMyTrips}
+                        disabled={isSaving}
+                        className={`btn flex items-center gap-2 ${
+                          savedSuccess 
+                            ? 'bg-green-500 hover:bg-green-600' 
+                            : 'btn-primary'
+                        }`}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" />
+                            Saving...
+                          </>
+                        ) : savedSuccess ? (
+                          <>
+                            <Check size={18} />
+                            Saved!
+                          </>
+                        ) : (
+                          <>
+                            <Save size={18} />
+                            Save to MyTrips
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-gray-600">

@@ -15,14 +15,15 @@ const Header = ({ user, onLogout }) => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const navigationItems = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/my-trips', label: 'My Trips' },
-    { path: '/search/cities', label: 'Explore' },
-    { path: '/ai-itinerary', label: 'AI Planner' },
-    { path: '/budget', label: 'Budget' },
-    { path: '/profile', label: 'Profile' }
-  ]
+           const navigationItems = [
+           { path: '/dashboard', label: 'Dashboard' },
+           { path: '/my-trips', label: 'My Trips' },
+           { path: '/search/cities', label: 'Explore' },
+           { path: '/ai-itinerary', label: 'AI Planner' },
+           { path: '/calendar', label: 'Calendar' },
+           { path: '/budget', label: 'Budget' },
+           { path: '/profile', label: 'Profile' }
+         ]
 
   const isActive = (path) => {
     if (path === '/search/cities') {

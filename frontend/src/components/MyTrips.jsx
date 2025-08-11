@@ -1,55 +1,53 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Edit, Eye, Trash2, Plus } from 'lucide-react'
+import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Sparkles } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
 import VantaGlobe from './VantaGlobe'
+import { tripsApi } from '../api/trips'
+import { aiApi } from '../api/ai'
 
 const MyTrips = () => {
-  const seedTrips = [
-    {
-      id: 1,
-      title: 'European Adventure',
-      destinations: ['Paris', 'Rome', 'Barcelona'],
-      startDate: '2024-03-15',
-      endDate: '2024-03-25',
-      status: 'upcoming',
-      image: 'https://images.unsplash.com/photo-1665131439247-287a396b4edf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-      progress: 85
-    },
-    {
-      id: 2,
-      title: 'Asian Discovery',
-      destinations: ['Tokyo', 'Seoul', 'Bangkok'],
-      startDate: '2024-06-10',
-      endDate: '2024-06-20',
-      status: 'planning',
-      image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=200&fit=crop',
-      progress: 45
-    },
-    {
-      id: 3,
-      title: 'California Road Trip',
-      destinations: ['Los Angeles', 'San Francisco', 'San Diego'],
-      startDate: '2023-12-01',
-      endDate: '2023-12-10',
-      status: 'completed',
-      image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=200&fit=crop',
-      progress: 100
-    }
-  ]
-
-  const [trips, setTrips] = useState(() => {
-    try {
-      const stored = localStorage.getItem('userTrips')
-      const userTrips = stored ? JSON.parse(stored) : []
-      return [...userTrips, ...seedTrips]
-    } catch {
-      return [...seedTrips]
-    }
-  })
-
+  const [trips, setTrips] = useState([])
+  const [aiItineraries, setAiItineraries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+
+  useEffect(() => {
+    fetchTrips()
+  }, [])
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('Fetching trips and AI itineraries...')
+      const [tripsResponse, aiData] = await Promise.all([
+        tripsApi.list(),
+        aiApi.getUserItineraries()
+      ])
+      
+      console.log('Trips response:', tripsResponse)
+      console.log('AI data:', aiData)
+      
+      // The backend returns { trips: [...] }
+      const tripsData = tripsResponse.trips || tripsResponse || []
+      const aiItinerariesData = aiData || []
+      
+      console.log('Processed trips data:', tripsData)
+      console.log('Processed AI data:', aiItinerariesData)
+      
+      setTrips(tripsData)
+      setAiItineraries(aiItinerariesData)
+    } catch (err) {
+      console.error('Error fetching trips:', err)
+      setError('Failed to load trips: ' + (err.message || 'Unknown error'))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -71,6 +69,12 @@ const MyTrips = () => {
           icon: '✅',
           label: 'Completed'
         }
+      case 'ai-generated': 
+        return { 
+          color: 'bg-gradient-to-r from-purple-500 to-pink-600 text-white', 
+          icon: '🤖',
+          label: 'AI Generated'
+        }
       default: 
         return { 
           color: 'bg-gray-100 text-gray-800', 
@@ -88,12 +92,69 @@ const MyTrips = () => {
     })
   }
 
-  const filteredTrips = trips.filter(trip => {
+  const getTripStatus = (trip) => {
+    const now = new Date()
+    const startDate = new Date(trip.startDate)
+    const endDate = new Date(trip.endDate)
+    
+    if (endDate < now) return 'completed'
+    if (startDate <= now && endDate >= now) return 'ongoing'
+    if (trip._count?.stops === 0) return 'planning'
+    return 'upcoming'
+  }
+
+  const calculateProgress = (trip) => {
+    // Simple progress calculation based on stops and activities
+    const totalStops = trip._count?.stops || 0
+    const totalActivities = trip._count?.activities || 0
+    
+    if (totalStops === 0) return 25 // Planning stage
+    if (totalActivities === 0) return 50 // Stops added but no activities
+    if (totalActivities > 0) return 75 // Activities added
+    return 100 // Complete
+  }
+
+  // Transform regular trips to match expected format
+  const transformedTrips = (trips || []).map(trip => ({
+    id: trip.id,
+    title: trip.name,
+    destinations: trip.stops?.map(stop => stop.city?.name).filter(Boolean) || [],
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    status: getTripStatus(trip),
+    image: trip.coverImg || 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=200&fit=crop',
+    progress: calculateProgress(trip),
+    isAiGenerated: false
+  }))
+
+  // Transform AI itineraries to match trip format
+  const transformedAiItineraries = (aiItineraries || []).map(ai => ({
+    id: `ai-${ai.id}`,
+    title: `${ai.source} to ${ai.destination}`,
+    destinations: [ai.destination],
+    startDate: ai.startDate,
+    endDate: ai.endDate,
+    status: 'ai-generated',
+    image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&h=200&fit=crop',
+    progress: 100,
+    isAiGenerated: true,
+    aiData: ai
+  }))
+
+  // Combine regular trips and AI itineraries
+  const allTrips = [...transformedTrips, ...transformedAiItineraries]
+
+  const filteredTrips = allTrips.filter(trip => {
     const matchesFilter = filter === 'all' || trip.status === filter
     const matchesSearch = trip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          trip.destinations.some(dest => dest.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesFilter && matchesSearch
   })
+
+  console.log('All trips:', allTrips)
+  console.log('Filtered trips:', filteredTrips)
+  console.log('Loading:', loading)
+  console.log('Error:', error)
 
   return (
     <VantaGlobe
@@ -133,7 +194,7 @@ const MyTrips = () => {
               />
             </div>
             <div className="flex gap-3 flex-wrap md:flex-nowrap items-stretch">
-              {['all', 'upcoming', 'planning', 'completed'].map((status) => (
+              {['all', 'upcoming', 'planning', 'completed', 'ai-generated'].map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
@@ -143,15 +204,33 @@ const MyTrips = () => {
                       : 'bg-transparent text-white/80 border-white/30 hover:bg-white/10'
                   }`}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status === 'ai-generated' ? 'AI Generated' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your trips...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="card bg-red-50 border-red-200 mb-8">
+            <div className="text-red-800">
+              <h4 className="font-semibold">Error</h4>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Trips Grid */}
-        {filteredTrips.length > 0 ? (
+        {!loading && filteredTrips.length > 0 ? (
           <div className="grid grid-2 gap-8">
             {filteredTrips.map((trip, index) => {
               const statusConfig = getStatusConfig(trip.status)
@@ -171,6 +250,14 @@ const MyTrips = () => {
                       <span className="mr-1">{statusConfig.icon}</span>
                       {statusConfig.label}
                     </div>
+
+                    {/* AI Generated Badge */}
+                    {trip.isAiGenerated && (
+                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white backdrop-blur-sm">
+                        <Sparkles size={14} className="inline mr-1" />
+                        AI
+                      </div>
+                    )}
 
                     {/* Progress Bar */}
                     <div className="absolute bottom-4 left-4 right-4">
