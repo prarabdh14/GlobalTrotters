@@ -146,19 +146,7 @@ const LoginScreen = ({ onLogin }) => {
           </form>
         </div>
 
-        {/* Features Preview */}
-        <div className="mt-8 grid grid-3 gap-4 animate-fade-in-up stagger-7">
-          {[
-            { icon: '🗺️', text: 'Plan Trips' },
-            { icon: '✈️', text: 'Book Flights' },
-            { icon: '🏨', text: 'Find Hotels' }
-          ].map((feature, index) => (
-            <div key={index} className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300">
-              <div className="text-2xl mb-1">{feature.icon}</div>
-              <div className="text-sm font-medium text-gray-700">{feature.text}</div>
-            </div>
-          ))}
-        </div>
+
       </div>
     </div>
   )
