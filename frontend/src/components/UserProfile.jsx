@@ -1,23 +1,41 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { User, Mail, Phone, MapPin, Settings, Save, Camera, Bell, Globe, DollarSign } from 'lucide-react'
 import VantaGlobe from './VantaGlobe'
 
 const UserProfile = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    name: user?.name || 'John Doe',
-    email: user?.email || 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, USA',
-    bio: 'Travel enthusiast who loves exploring new cultures and cuisines. Always planning the next adventure!',
-    language: 'English',
-    currency: 'USD',
-    notifications: {
-      email: true,
-      push: false,
-      marketing: true
+  
+  // Load saved profile data from localStorage or use defaults
+  const getInitialFormData = () => {
+    const savedProfile = localStorage.getItem('userProfile')
+    if (savedProfile) {
+      return JSON.parse(savedProfile)
     }
-  })
+    return {
+      name: user?.name || 'John Doe',
+      email: user?.email || 'john.doe@example.com',
+      phone: '+1 (555) 123-4567',
+      location: 'New York, USA',
+      bio: 'Travel enthusiast who loves exploring new cultures and cuisines. Always planning the next adventure!',
+      language: 'English',
+      currency: 'USD',
+      notifications: {
+        email: true,
+        push: false,
+        marketing: true
+      }
+    }
+  }
+  
+  const [formData, setFormData] = useState(getInitialFormData)
+  
+  // Load profile data on component mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('userProfile')
+    if (savedProfile) {
+      setFormData(JSON.parse(savedProfile))
+    }
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -39,10 +57,20 @@ const UserProfile = ({ user }) => {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Save profile changes
-    setIsEditing(false)
+    
+    try {
+      // Save to localStorage for persistence across page navigation
+      localStorage.setItem('userProfile', JSON.stringify(formData))
+      
+      console.log('Saving profile changes:', formData)
+      console.log('Profile updated and saved to localStorage!')
+      
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Error saving profile:', error)
+    }
   }
 
   const savedDestinations = [
