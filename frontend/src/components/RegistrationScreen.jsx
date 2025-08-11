@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, User, Mail, Phone, MapPin } from 'lucide-react'
-import VantaGlobe from './VantaGlobe'
+import { authApi } from '../api/auth'
 
 const RegistrationScreen = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -13,15 +13,28 @@ const RegistrationScreen = ({ onLogin }) => {
     country: '',
     additionalInfo: ''
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Simulate registration
-    onLogin({
-      id: 1,
-      name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email
-    })
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim()
+      const password = cryptoRandomPassword()
+      const { user } = await authApi.register({
+        name: fullName,
+        email: formData.email,
+        password
+      })
+      onLogin(user)
+    } catch (err) {
+      setError(err.message || 'Failed to register')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -32,18 +45,8 @@ const RegistrationScreen = ({ onLogin }) => {
   }
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={1.00}
-      points={10.00}
-      maxDistance={20.00}
-      spacing={15.00}
-      showDots={true}
-    >
-      <div className="min-h-screen flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-2 mb-4">
             <Globe size={32} className="text-blue-600" />
@@ -149,8 +152,12 @@ const RegistrationScreen = ({ onLogin }) => {
               />
             </div>
 
-            <button type="submit" className="btn btn-primary w-full mb-4">
-              Register User
+            {error && (
+              <div className="text-red-600 text-sm mb-2">{error}</div>
+            )}
+
+            <button type="submit" className="btn btn-primary w-full mb-4" disabled={isLoading}>
+              {isLoading ? 'Registering...' : 'Register User'}
             </button>
 
             <div className="text-center">
@@ -161,9 +168,15 @@ const RegistrationScreen = ({ onLogin }) => {
           </form>
         </div>
       </div>
-      </div>
-    </VantaGlobe>
+    </div>
   )
+}
+
+function cryptoRandomPassword() {
+  // Generate a simple random password when the registration form doesn't collect one
+  // In a real app, you'd collect password fields; here we keep the UI minimal
+  const random = Math.random().toString(36).slice(-8)
+  return `Gt@${random}`
 }
 
 export default RegistrationScreen

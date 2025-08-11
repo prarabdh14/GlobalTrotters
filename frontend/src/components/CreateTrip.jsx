@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, FileText, Upload } from 'lucide-react'
-import VantaGlobe from './VantaGlobe'
+import { tripsApi } from '../api/trips'
 
 const CreateTrip = () => {
   const navigate = useNavigate()
@@ -12,12 +12,29 @@ const CreateTrip = () => {
     description: '',
     coverPhoto: null
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState(null)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Simulate trip creation
-    const tripId = Date.now()
-    navigate(`/trip/${tripId}/build`)
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const payload = {
+        name: formData.tripName,
+        description: formData.description || '—',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        coverImg: null,
+      }
+      const { trip } = await tripsApi.create(payload)
+      navigate(`/trip/${trip.id}/build`)
+    } catch (err) {
+      setError(err.message || 'Failed to create trip')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -35,18 +52,8 @@ const CreateTrip = () => {
   }
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={0.8}
-      points={8.00}
-      maxDistance={15.00}
-      spacing={12.00}
-      showDots={true}
-    >
-      <div className="container py-8 relative z-10">
-        <div className="max-w-2xl mx-auto">
+    <div className="container py-8">
+      <div className="max-w-2xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create a New Trip</h1>
           <p className="text-gray-600">Plan your next adventure by providing some basic details</p>
@@ -131,9 +138,13 @@ const CreateTrip = () => {
               <p className="text-sm text-gray-500 mt-2">Upload a photo that represents your trip</p>
             </div>
 
+            {error && (
+              <div className="text-red-600 text-sm mb-2">{error}</div>
+            )}
+
             <div className="flex gap-4">
-              <button type="submit" className="btn btn-primary flex-1">
-                Create Trip & Start Planning
+              <button type="submit" className="btn btn-primary flex-1" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Trip & Start Planning'}
               </button>
               <button 
                 type="button" 
@@ -146,8 +157,7 @@ const CreateTrip = () => {
           </form>
         </div>
       </div>
-      </div>
-    </VantaGlobe>
+    </div>
   )
 }
 

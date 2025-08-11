@@ -47,7 +47,7 @@ A comprehensive REST API for the GlobalTrotters travel planning application buil
    ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/globetrotters"
    JWT_SECRET="your-super-secret-jwt-key-here"
-   PORT=5000
+   PORT=3000
    NODE_ENV=development
    FRONTEND_URL="http://localhost:5173"
    ```
@@ -63,7 +63,7 @@ A comprehensive REST API for the GlobalTrotters travel planning application buil
    npm run dev
    ```
 
-The API will be available at `http://localhost:5000`
+The API will be available at `http://localhost:3000`
 
 ## API Endpoints
 
@@ -223,7 +223,7 @@ npx prisma studio        # Open Prisma Studio
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `JWT_SECRET` | Secret key for JWT tokens | Yes |
-| `PORT` | Server port (default: 5000) | No |
+| `PORT` | Server port (default: 3000) | No |
 | `NODE_ENV` | Environment (development/production) | No |
 | `FRONTEND_URL` | Frontend URL for CORS | No |
 
