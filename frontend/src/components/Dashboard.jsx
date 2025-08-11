@@ -69,7 +69,7 @@ const Dashboard = () => {
         <div className="mb-12 text-center animate-fade-in-up">
           <div className="relative inline-block">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 gradient-text">
-              Welcome back, John! ✨
+              Welcome back, John! 
             </h1>
             <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-bounce"></div>
           </div>
