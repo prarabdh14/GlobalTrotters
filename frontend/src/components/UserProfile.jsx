@@ -193,15 +193,18 @@ const UserProfile = ({ user }) => {
           </div>
 
           {/* Travel Statistics */}
-          <div className="card">
+          <div className="card bg-white/10 border border-white/20 backdrop-blur-md text-white animate-fade-in-up">
             <h2 className="text-xl font-semibold mb-6">Travel Statistics</h2>
             <div className="grid grid-2 gap-4">
               {travelStats.map((stat, index) => (
-                <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600 mb-1">
+                <div
+                  key={index}
+                  className={`text-center p-4 rounded-lg bg-white/10 border border-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/15 animate-fade-in-up stagger-${index + 1}`}
+                >
+                  <div className="text-2xl font-bold text-white mb-1">
                     {stat.value}
                   </div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
+                  <div className="text-sm text-white/70">{stat.label}</div>
                 </div>
               ))}
             </div>
