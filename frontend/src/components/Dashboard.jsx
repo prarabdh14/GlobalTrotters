@@ -56,6 +56,13 @@ const Dashboard = ({ user }) => {
       link: '/create-trip'
     },
     {
+      title: 'AI Itinerary',
+      description: 'Get AI-powered travel plans',
+      icon: Sparkles,
+      color: 'bg-gradient-to-br from-orange-500 to-red-600',
+      link: '/ai-itinerary'
+    },
+    {
       title: 'Explore Cities',
       description: 'Discover amazing destinations',
       icon: MapPin,

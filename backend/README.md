@@ -47,6 +47,7 @@ A comprehensive REST API for the GlobalTrotters travel planning application buil
    ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/globetrotters"
    JWT_SECRET="your-super-secret-jwt-key-here"
+   OPENROUTER_API_KEY="your-openrouter-api-key-here"
    PORT=3000
    NODE_ENV=development
    FRONTEND_URL="http://localhost:5173"
@@ -223,9 +224,11 @@ npx prisma studio        # Open Prisma Studio
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
 | `JWT_SECRET` | Secret key for JWT tokens | Yes |
+| `OPENROUTER_API_KEY` | OpenRouter API key for OpenAI access | Yes (for AI features) |
 | `PORT` | Server port (default: 3000) | No |
 | `NODE_ENV` | Environment (development/production) | No |
 | `FRONTEND_URL` | Frontend URL for CORS | No |
+| `OPENAI_MODEL` | OpenAI model to use (default: openai/gpt-4o-mini) | No |
 
 ## Contributing
 
@@ -239,12 +242,12 @@ npx prisma studio        # Open Prisma Studio
 
 This project is licensed under the ISC License. 
 
-# AI Itinerary (Gemini) Integration
+# AI Itinerary (OpenAI via OpenRouter) Integration
 
 Env vars:
 
-- `GEMINI_API_KEY` (required)
-- `GEMINI_MODEL` (optional, default: models/gemini-1.5-pro)
+- `OPENROUTER_API_KEY` (required)
+- `OPENAI_MODEL` (optional, default: openai/gpt-4o-mini)
 
 Run migrations:
 
@@ -255,7 +258,7 @@ Routes:
 
 - `POST /api/ai/plan` body: `{ source, destination, start_date, end_date, preferences?, budget?, force_refresh? }`
   - Cache-first by `cache_key` (sha256 of normalized inputs + model)
-  - Returns cached row or creates new via Gemini and stores prompt + outputs
+  - Returns cached row or creates new via OpenAI and stores prompt + outputs
 
 - `GET /api/ai/search?q=...&limit=20&offset=0`
   - Searches cached itineraries (source/destination/response_text)

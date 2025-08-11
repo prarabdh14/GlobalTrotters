@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Globe, User, LogOut } from 'lucide-react'
+import { Globe, User, LogOut, Sparkles } from 'lucide-react'
 
 const Header = ({ user, onLogout }) => {
   const location = useLocation()
@@ -57,13 +57,21 @@ const Header = ({ user, onLogout }) => {
               </li>
               <li className="animate-fade-in-down stagger-4">
                 <Link 
+                  to="/ai-itinerary" 
+                  className={location.pathname === '/ai-itinerary' ? 'active' : ''}
+                >
+                  AI Planner
+                </Link>
+              </li>
+              <li className="animate-fade-in-down stagger-5">
+                <Link 
                   to="/budget" 
                   className={location.pathname === '/budget' ? 'active' : ''}
                 >
                   Budget
                 </Link>
               </li>
-              <li className="animate-fade-in-down stagger-5">
+              <li className="animate-fade-in-down stagger-6">
                 <Link 
                   to="/profile" 
                   className={location.pathname === '/profile' ? 'active' : ''}

@@ -3,17 +3,24 @@ const crypto = require('crypto');
 const prisma = require('../config/database');
 const router = express.Router();
 
-// Lazy Gemini import to keep startup fast
-let genAI = null;
-async function getGemini() {
-  if (!genAI) {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Lazy OpenAI import to keep startup fast
+let openai = null;
+async function getOpenAI() {
+  if (!openai) {
+    const OpenAI = require('openai');
+    openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+        'X-Title': 'GlobalTrotters'
+      }
+    });
   }
-  return genAI;
+  return openai;
 }
 
-const MODEL = process.env.GEMINI_MODEL || 'models/gemini-1.5-pro';
+const MODEL = process.env.OPENAI_MODEL || 'openai/gpt-4o-mini';
 
 const JSON_SCHEMA = {
   type: 'object',
@@ -76,9 +83,9 @@ function buildPrompt(p) {
 
     Create a detailed daily itinerary covering each day of the trip from start to end date:
 
-    Include recommended modes of transport for each journey leg (flights, trains, buses, taxis), highlighting options that fit the user’s budget.
+    Include recommended modes of transport for each journey leg (flights, trains, buses, taxis), highlighting options that fit the user's budget.
 
-    Suggest top popular tourist attractions and must-visit sites in the destination city, focusing on those that match the user’s travel preferences (e.g., if they prefer museums and natural places, prioritize renowned museums, national parks, gardens).
+    Suggest top popular tourist attractions and must-visit sites in the destination city, focusing on those that match the user's travel preferences (e.g., if they prefer museums and natural places, prioritize renowned museums, national parks, gardens).
 
     Recommend popular hotels, hostels, or guesthouses that offer good value while fitting within the budget, including approximate prices.
 
@@ -153,15 +160,31 @@ router.post('/plan', async (req, res) => {
       if (cached) return res.json(cached);
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured on server' });
     }
 
     const prompt = buildPrompt({ source, destination, start_date, end_date, preferences, budget });
-    const client = await getGemini();
-    const model = client.getGenerativeModel({ model: MODEL });
-    const rsp = await model.generateContent(prompt);
-    const text = rsp.response.text();
+    const client = await getOpenAI();
+    
+    const completion = await client.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a travel planning expert. Always respond with valid JSON matching the provided schema.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+      response_format: { type: 'json_object' }
+    });
+
+    const text = completion.choices[0].message.content;
 
     let parsed = null;
     try { parsed = JSON.parse(text); } catch {}

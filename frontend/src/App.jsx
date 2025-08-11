@@ -14,6 +14,7 @@ import TripBudget from './components/TripBudget'
 import TripCalendar from './components/TripCalendar'
 import UserProfile from './components/UserProfile'
 import AdminDashboard from './components/AdminDashboard'
+import AiItineraryGenerator from './components/AiItineraryGenerator'
 import Header from './components/Header'
 
 import VantaGlobe from './components/VantaGlobe'
@@ -83,6 +84,7 @@ function App() {
             <Route path="/search/cities" element={<CitySearch />} />
             <Route path="/city/:id" element={<CityDetails />} />
             <Route path="/search/activities" element={<ActivitySearch />} />
+            <Route path="/ai-itinerary" element={<AiItineraryGenerator />} />
             <Route path="/profile" element={<UserProfile user={currentUser} />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
