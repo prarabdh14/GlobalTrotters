@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String
+  name        String
+  profileImg  String?
+  language    String?
+  createdAt   DateTime  @default(now())
+  trips       Trip[]
+}
+
+model Trip {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  name        String
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  coverImg    String?
+  createdAt   DateTime  @default(now())
+  stops       TripStop[]
+  budgetItems BudgetItem[]
+  sharedTrip  SharedTrip?
+  activities  TripActivity[]
+}
+
+model TripStop {
+  id        Int     @id @default(autoincrement())
+  trip      Trip    @relation(fields: [tripId], references: [id])
+  tripId    Int
+  city      City    @relation(fields: [cityId], references: [id])
+  cityId    Int
+  startDate DateTime
+  endDate   DateTime
+  orderNum  Int
+  activities TripActivity[]
+}
+
+model City {
+  id         Int      @id @default(autoincrement())
+  name       String
+  country    String
+  costIndex  Float
+  popularity Float
+  imageUrl   String?
+  activities Activity[]
+  stops      TripStop[]
+}
+
+model Activity {
+  id          Int       @id @default(autoincrement())
+  city        City      @relation(fields: [cityId], references: [id])
+  cityId      Int
+  name        String
+  description String
+  type        String
+  cost        Float
+  duration    Int    // minutes/hours
+  imageUrl    String?
+  tripActs    TripActivity[]
+}
+
+model TripActivity {
+  id         Int      @id @default(autoincrement())
+  trip       Trip     @relation(fields: [tripId], references: [id])
+  tripId     Int
+  stop       TripStop @relation(fields: [stopId], references: [id])
+  stopId     Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId Int
+  date       DateTime
+  startTime  DateTime
+  note       String?
+}
+
+model BudgetItem {
+  id       Int    @id @default(autoincrement())
+  trip     Trip   @relation(fields: [tripId], references: [id])
+  tripId   Int
+  category String
+  amount   Float
+  details  String?
+}
+
+model SharedTrip {
+  id        Int     @id @default(autoincrement())
+  trip      Trip    @relation(fields: [tripId], references: [id])
+  tripId    Int     @unique
+  shareCode String  @unique
+  isPublic  Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
