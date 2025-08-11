@@ -10,11 +10,20 @@ const LoginScreen = ({ onLogin }) => {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    setIsVisible(true)
+    console.log('LoginScreen mounted, starting animation sequence...')
+    // First, immediately hide the form
+    setIsVisible(false)
+    
+    // Then, after a short delay, show it with animation
+    const timer = setTimeout(() => {
+      console.log('Setting isVisible to true - starting slide-in animation')
+      setIsVisible(true)
+    }, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   const handleSubmit = async (e) => {
@@ -43,27 +52,34 @@ const LoginScreen = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+    <>
+      {/* Logo Section - Top Left Corner of Page */}
+      <div className="fixed top-6 left-6 z-50 animate-fade-in-up">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Globe size={32} className="text-blue-600 animate-pulse" />
+            <div className="absolute inset-0 bg-blue-400 rounded-full opacity-20 animate-ping"></div>
+          </div>
+          <h1 className="text-2xl font-bold gradient-text">GlobeTrotter</h1>
+        </div>
       </div>
 
-      <div className={`max-w-md w-full relative z-10 transition-all duration-1000 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
-        {/* Logo Section */}
-        <div className="text-center mb-8 animate-fade-in-up">
-          <div className="flex justify-center items-center gap-3 mb-6">
-            <div className="relative">
-              <Globe size={48} className="text-blue-600 animate-pulse" />
-              <div className="absolute inset-0 bg-blue-400 rounded-full opacity-20 animate-ping"></div>
-            </div>
-            <h1 className="text-4xl font-bold gradient-text">GlobeTrotter</h1>
-          </div>
-          <p className="text-gray-600 text-lg animate-fade-in-up stagger-1">
+      <div className="min-h-screen flex items-center py-12 px-4 relative overflow-hidden" key="login-screen">
+        <div 
+          className={`w-72 relative z-20 ml-20 lg:ml-32`}
+          style={{
+            transform: isVisible ? 'translateX(0) scale(1)' : 'translateX(-150px) scale(0.8)',
+            opacity: isVisible ? 1 : 0,
+            transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+          onClick={() => console.log('Current isVisible state:', isVisible)}
+        >
+        {/* Login Form Header */}
+        <div className="mb-8 animate-fade-in-up">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2 animate-fade-in-up stagger-1">
+            Welcome Back
+          </h2>
+          <p className="text-gray-600 text-base animate-fade-in-up stagger-1">
             Sign in to your account
           </p>
         </div>
@@ -145,10 +161,9 @@ const LoginScreen = ({ onLogin }) => {
             </div>
           </form>
         </div>
-
-
       </div>
     </div>
+    </>
   )
 }
 

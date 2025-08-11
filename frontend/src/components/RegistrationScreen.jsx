@@ -22,7 +22,10 @@ const RegistrationScreen = ({ onLogin }) => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 100)
+    return () => clearTimeout(timer)
   }, [])
 
   const handleSubmit = async (e) => {
@@ -62,7 +65,7 @@ const RegistrationScreen = ({ onLogin }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center py-12 px-4 relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
@@ -70,8 +73,8 @@ const RegistrationScreen = ({ onLogin }) => {
         <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
       </div>
 
-      <div className={`max-w-md w-full relative z-10 transition-all duration-1000 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      <div className={`max-w-md w-full relative z-10 ml-8 lg:ml-16 registration-form-container ${
+        isVisible ? 'visible' : ''
       }`}>
         {/* Logo Section */}
         <div className="text-center mb-8 animate-fade-in-up">

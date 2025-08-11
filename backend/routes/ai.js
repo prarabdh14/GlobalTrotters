@@ -118,17 +118,19 @@ function buildPrompt(p) {
 
     Highlight any cost-saving tips, such as discount passes or travel timings.
 
-    Use clear, concise language suitable for an easy-to-follow travel plan.`
-        `Constraints:\n` +
-        `- Reflect travel time on first/last day if applicable.\n` +
-        `- Prefer public transport by default unless preferences say otherwise.\n` +
-        `- 3–6 activities per day, balanced (sightseeing, meals, rest).\n` +
-        `- One currency across outputs; specify currency.\n` +
-        `- Keep costs realistic for season/region.\n\n` +
-        `Output:\n` +
-        `STRICT JSON ONLY, matching this schema (no prose outside JSON):\n` +
-        `${JSON.stringify(JSON_SCHEMA, null, 2)}\n` +
-        `If JSON cannot be produced, fallback to well-structured markdown.`;
+    Use clear, concise language suitable for an easy-to-follow travel plan.
+
+    Constraints:
+    - Reflect travel time on first/last day if applicable.
+    - Prefer public transport by default unless preferences say otherwise.
+    - 3–6 activities per day, balanced (sightseeing, meals, rest).
+    - One currency across outputs; specify currency.
+    - Keep costs realistic for season/region.
+
+    Output:
+    STRICT JSON ONLY, matching this schema (no prose outside JSON):
+    ${JSON.stringify(JSON_SCHEMA, null, 2)}
+    If JSON cannot be produced, fallback to well-structured markdown.`;
     }
 
 function makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model }) {
@@ -148,24 +150,52 @@ function makeCacheKey({ source, destination, start_date, end_date, preferences, 
 // POST /api/ai/plan
 router.post('/plan', async (req, res) => {
   try {
+    console.log('=== AI PLAN REQUEST START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { source, destination, start_date, end_date, preferences, budget, force_refresh } = req.body || {};
+    console.log('Extracted params:', { source, destination, start_date, end_date, preferences, budget, force_refresh });
+    
     if (!source || !destination || !start_date || !end_date) {
+      console.log('Missing required fields:', { source, destination, start_date, end_date });
       return res.status(400).json({ error: 'source, destination, start_date, end_date are required' });
     }
 
     const cacheKey = makeCacheKey({ source, destination, start_date, end_date, preferences, budget, model: MODEL });
+    console.log('Generated cache key:', cacheKey);
 
     if (!force_refresh) {
+      console.log('Checking for cached response...');
       const cached = await prisma.aiItinerary.findUnique({ where: { cacheKey } });
-      if (cached) return res.json(cached);
+      if (cached) {
+        console.log('Found cached response, returning...');
+        return res.json(cached);
+      }
+      console.log('No cached response found');
     }
 
+    console.log('Checking OPENROUTER_API_KEY...');
+    console.log('OPENROUTER_API_KEY exists:', !!process.env.OPENROUTER_API_KEY);
+    console.log('OPENROUTER_API_KEY length:', process.env.OPENROUTER_API_KEY ? process.env.OPENROUTER_API_KEY.length : 0);
+    
     if (!process.env.OPENROUTER_API_KEY) {
+      console.log('ERROR: OPENROUTER_API_KEY not configured on server');
       return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured on server' });
     }
 
+    console.log('Building prompt...');
     const prompt = buildPrompt({ source, destination, start_date, end_date, preferences, budget });
+    console.log('Prompt length:', prompt.length);
+    console.log('Prompt preview:', prompt.substring(0, 200) + '...');
+    
+    console.log('Getting OpenAI client...');
     const client = await getOpenAI();
+    console.log('OpenAI client obtained successfully');
+    
+    console.log('Making API request to OpenAI...');
+    console.log('Model:', MODEL);
+    console.log('Temperature:', 0.7);
+    console.log('Max tokens:', 4000);
     
     const completion = await client.chat.completions.create({
       model: MODEL,
@@ -184,11 +214,23 @@ router.post('/plan', async (req, res) => {
       response_format: { type: 'json_object' }
     });
 
+    console.log('OpenAI API response received');
+    console.log('Response choices:', completion.choices.length);
     const text = completion.choices[0].message.content;
+    console.log('Response text length:', text.length);
+    console.log('Response text preview:', text.substring(0, 200) + '...');
 
+    console.log('Parsing JSON response...');
     let parsed = null;
-    try { parsed = JSON.parse(text); } catch {}
-
+    try { 
+      parsed = JSON.parse(text); 
+      console.log('JSON parsed successfully');
+    } catch (parseError) {
+      console.log('JSON parse error:', parseError.message);
+      console.log('Raw text that failed to parse:', text);
+    }
+    
+    console.log('Saving to database...');
     const created = await prisma.aiItinerary.upsert({
       where: { cacheKey },
       update: { responseJson: parsed, responseText: text, prompt, model: MODEL },
@@ -207,10 +249,17 @@ router.post('/plan', async (req, res) => {
       }
     });
 
+    console.log('Database save successful');
+    console.log('=== AI PLAN REQUEST END ===');
     return res.json(created);
   } catch (err) {
-    console.error('AI plan error:', err);
-    return res.status(500).json({ error: 'Failed to generate itinerary' });
+    console.error('=== AI PLAN ERROR ===');
+    console.error('Error type:', err.constructor.name);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('Full error object:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    console.error('=== END AI PLAN ERROR ===');
+    return res.status(500).json({ error: 'Failed to generate itinerary', details: err.message });
   }
 });
 
