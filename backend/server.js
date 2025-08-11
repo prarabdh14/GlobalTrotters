@@ -9,6 +9,7 @@ const userRoutes = require('./routes/users');
 const tripRoutes = require('./routes/trips');
 const cityRoutes = require('./routes/cities');
 const activityRoutes = require('./routes/activities');
+const aiRoutes = require('./routes/ai');
 const budgetRoutes = require('./routes/budgets');
 const adminRoutes = require('./routes/admin');
 
@@ -48,6 +49,7 @@ app.use('/api/cities', cityRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
