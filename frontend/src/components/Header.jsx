@@ -57,6 +57,14 @@ const Header = ({ user, onLogout }) => {
               </li>
               <li className="animate-fade-in-down stagger-4">
                 <Link 
+                  to="/budget" 
+                  className={location.pathname === '/budget' ? 'active' : ''}
+                >
+                  Budget
+                </Link>
+              </li>
+              <li className="animate-fade-in-down stagger-5">
+                <Link 
                   to="/profile" 
                   className={location.pathname === '/profile' ? 'active' : ''}
                 >
