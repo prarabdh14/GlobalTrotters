@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Clock, DollarSign, Share2, Copy, Edit, Loader2, Sparkles } from 'lucide-react'
+import { Calendar, MapPin, Clock, DollarSign, Share2, Copy, Edit, Loader2, Sparkles, CalendarDays } from 'lucide-react'
 import VantaGlobe from './VantaGlobe'
 import { tripsApi } from '../api/trips'
-import { aiApi } from '../api/ai'
+import { aiAPI } from '../api/ai'
+import RescheduleModal from './RescheduleModal'
 
 const ItineraryView = () => {
   const { id } = useParams()
@@ -13,6 +14,7 @@ const ItineraryView = () => {
   const [aiItinerary, setAiItinerary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false)
 
   useEffect(() => {
     fetchTripData()
@@ -29,7 +31,7 @@ const ItineraryView = () => {
       if (id.startsWith('ai-')) {
         const aiId = id.replace('ai-', '')
         console.log('Fetching AI itinerary with ID:', aiId)
-        const aiData = await aiApi.getUserItineraries()
+        const aiData = await aiAPI.getUserItineraries()
         console.log('AI data received:', aiData)
         
         const foundAi = aiData.find(ai => ai.id.toString() === aiId)
@@ -86,7 +88,7 @@ const ItineraryView = () => {
           
           // Try to find corresponding AI itinerary
           try {
-            const aiData = await aiApi.getUserItineraries()
+            const aiData = await aiAPI.getUserItineraries()
             console.log('AI data for comparison:', aiData)
             
             // Look for AI itinerary with matching source/destination
@@ -206,6 +208,25 @@ const ItineraryView = () => {
     }
   }
 
+  const handleRescheduleSuccess = (rescheduledItinerary) => {
+    // Update the current view with the rescheduled itinerary
+    if (aiItinerary) {
+      setAiItinerary(rescheduledItinerary)
+      
+      // Update the trip data as well
+      const updatedTrip = {
+        ...trip,
+        startDate: rescheduledItinerary.startDate,
+        endDate: rescheduledItinerary.endDate,
+        days: rescheduledItinerary.responseJson?.daily_plan || trip.days
+      }
+      setTrip(updatedTrip)
+    }
+    
+    // Show success message
+    alert(`Itinerary successfully rescheduled to ${new Date(rescheduledItinerary.startDate).toLocaleDateString()} - ${new Date(rescheduledItinerary.endDate).toLocaleDateString()}`);
+  };
+
   if (loading) {
     return (
       <VantaGlobe>
@@ -288,6 +309,16 @@ const ItineraryView = () => {
             )}
           </div>
           <div className="flex gap-2">
+            {aiItinerary && (
+              <button 
+                onClick={() => setShowRescheduleModal(true)}
+                className="px-3 py-2 text-sm rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 transition-all duration-200 flex items-center gap-1"
+                title="Reschedule this itinerary"
+              >
+                <CalendarDays size={14} />
+                Reschedule
+              </button>
+            )}
             <button 
               onClick={handleShare}
               className="px-1 py-2 text-sm rounded-lg border border-white/30 text-white/80 hover:bg-white/10 transition-all duration-200 flex items-center gap-1"
@@ -524,6 +555,16 @@ const ItineraryView = () => {
             <p className="text-gray-600">Calendar view implementation would go here</p>
           </div>
         </div>
+      )}
+
+      {/* Reschedule Modal for AI Itineraries */}
+      {aiItinerary && (
+        <RescheduleModal
+          isOpen={showRescheduleModal}
+          onClose={() => setShowRescheduleModal(false)}
+          itinerary={aiItinerary}
+          onRescheduleSuccess={handleRescheduleSuccess}
+        />
       )}
     </div>
   </VantaGlobe>

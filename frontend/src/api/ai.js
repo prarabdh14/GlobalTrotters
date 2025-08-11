@@ -1,24 +1,33 @@
 import { http } from './client';
 
-export const aiApi = {
-  // Generate AI itinerary
-  plan: (payload) => http.post('/api/ai/plan', payload),
+export const aiAPI = {
+  // Plan a new itinerary
+  planItinerary: async (data) => {
+    const response = await http.post('/api/ai/plan', data);
+    return response;
+  },
+
+  // Get reschedule options for an existing itinerary
+  getRescheduleOptions: async (cacheKey) => {
+    const response = await http.get(`/api/ai/reschedule-options/${cacheKey}`);
+    return response;
+  },
+
+  // Reschedule an existing itinerary
+  rescheduleItinerary: async (data) => {
+    const response = await http.post('/api/ai/reschedule', data);
+    return response;
+  },
 
   // Search cached itineraries
-  search: (params = {}) => http.get(`/api/ai/search${toQuery(params)}`),
+  searchItineraries: async (query, limit = 20, offset = 0) => {
+    const response = await http.get(`/api/ai/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`);
+    return response;
+  },
 
   // Get user's AI itineraries
-  getUserItineraries: () => http.get('/api/ai/user'),
-};
-
-// Helper function to convert params object to query string
-function toQuery(params) {
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, value);
-    }
-  });
-  const query = searchParams.toString();
-  return query ? `?${query}` : '';
-} 
+  getUserItineraries: async () => {
+    const response = await http.get('/api/ai/user');
+    return response;
+  }
+}; 

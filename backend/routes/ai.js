@@ -331,4 +331,306 @@ router.get('/user', async (req, res) => {
   }
 });
 
+// POST /api/ai/reschedule
+router.post('/reschedule', async (req, res) => {
+  try {
+    console.log('=== AI RESCHEDULE REQUEST START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    const { 
+      original_cache_key, 
+      new_start_date, 
+      new_end_date, 
+      force_refresh 
+    } = req.body || {};
+    
+    if (!original_cache_key || !new_start_date || !new_end_date) {
+      console.log('Missing required fields:', { original_cache_key, new_start_date, new_end_date });
+      return res.status(400).json({ 
+        error: 'original_cache_key, new_start_date, new_end_date are required' 
+      });
+    }
+
+    // Get user ID from the request
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log('No user ID found in request');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get the original itinerary
+    const original = await prisma.aiItinerary.findUnique({ 
+      where: { cacheKey: original_cache_key } 
+    });
+    
+    if (!original) {
+      console.log('Original itinerary not found:', original_cache_key);
+      return res.status(404).json({ 
+        error: 'Original itinerary not found' 
+      });
+    }
+
+    // Verify user owns the original itinerary
+    if (original.userId !== userId) {
+      console.log('User does not own this itinerary:', { userId, ownerId: original.userId });
+      return res.status(403).json({ 
+        error: 'You can only reschedule your own itineraries' 
+      });
+    }
+
+    // Create new cache key with updated dates
+    const newCacheKey = makeCacheKey({
+      source: original.source,
+      destination: original.destination,
+      start_date: new_start_date,
+      end_date: new_end_date,
+      preferences: original.preferences,
+      budget: original.budget,
+      model: original.model,
+      userId
+    });
+
+    console.log('Generated new cache key:', newCacheKey);
+
+    // Check if we already have a cached version with these new dates
+    if (!force_refresh) {
+      console.log('Checking for cached rescheduled response...');
+      const cached = await prisma.aiItinerary.findUnique({ 
+        where: { cacheKey: newCacheKey } 
+      });
+      if (cached) {
+        console.log('Found cached rescheduled response, returning...');
+        return res.json(cached);
+      }
+      console.log('No cached rescheduled response found');
+    }
+
+    console.log('Checking OPENROUTER_API_KEY...');
+    if (!process.env.OPENROUTER_API_KEY) {
+      console.log('ERROR: OPENROUTER_API_KEY not configured on server');
+      return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured on server' });
+    }
+
+    // Generate new prompt with updated dates
+    console.log('Building reschedule prompt...');
+    const prompt = buildPrompt({
+      source: original.source,
+      destination: original.destination,
+      start_date: new_start_date,
+      end_date: new_end_date,
+      preferences: original.preferences,
+      budget: original.budget
+    });
+
+    console.log('Getting OpenAI client...');
+    const client = await getOpenAI();
+    console.log('OpenAI client obtained successfully');
+    
+    console.log('Making API request to OpenAI for reschedule...');
+    const completion = await client.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a travel planning expert. Always respond with valid JSON matching the provided schema.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+      response_format: { type: 'json_object' }
+    });
+
+    console.log('OpenAI API response received for reschedule');
+    const text = completion.choices[0].message.content;
+    console.log('Response text length:', text.length);
+
+    console.log('Parsing JSON response...');
+    let parsed = null;
+    try { 
+      parsed = JSON.parse(text); 
+      console.log('JSON parsed successfully');
+    } catch (parseError) {
+      console.log('JSON parse error:', parseError.message);
+      console.log('Raw text that failed to parse:', text);
+    }
+    
+    console.log('Saving rescheduled itinerary to database...');
+    const created = await prisma.aiItinerary.upsert({
+      where: { cacheKey: newCacheKey },
+      update: { 
+        responseJson: parsed, 
+        responseText: text, 
+        prompt, 
+        model: MODEL 
+      },
+      create: {
+        cacheKey: newCacheKey,
+        userId,
+        source: original.source,
+        destination: original.destination,
+        startDate: new Date(new_start_date),
+        endDate: new Date(new_end_date),
+        preferences: original.preferences,
+        budget: original.budget,
+        model: MODEL,
+        prompt,
+        responseJson: parsed,
+        responseText: text
+      }
+    });
+
+    // Add reschedule metadata
+    const rescheduled = {
+      ...created,
+      rescheduled_from: original_cache_key,
+      original_dates: {
+        start: original.startDate,
+        end: original.endDate
+      },
+      new_dates: {
+        start: new Date(new_start_date),
+        end: new Date(new_end_date)
+      }
+    };
+
+    console.log('Rescheduled itinerary saved successfully');
+    console.log('=== AI RESCHEDULE REQUEST END ===');
+    return res.json(rescheduled);
+  } catch (err) {
+    console.error('=== AI RESCHEDULE ERROR ===');
+    console.error('Error type:', err.constructor.name);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('=== END AI RESCHEDULE ERROR ===');
+    return res.status(500).json({ error: 'Failed to reschedule itinerary', details: err.message });
+  }
+});
+
+// GET /api/ai/reschedule-options/:cache_key
+router.get('/reschedule-options/:cache_key', async (req, res) => {
+  try {
+    console.log('=== RESCHEDULE OPTIONS REQUEST START ===');
+    const { cache_key } = req.params;
+    console.log('Cache key:', cache_key);
+    
+    // Get user ID from the request
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log('No user ID found in request');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const original = await prisma.aiItinerary.findUnique({ 
+      where: { cacheKey: cache_key } 
+    });
+    
+    if (!original) {
+      console.log('Itinerary not found:', cache_key);
+      return res.status(404).json({ 
+        error: 'Itinerary not found' 
+      });
+    }
+
+    // Verify user owns the itinerary
+    if (original.userId !== userId) {
+      console.log('User does not own this itinerary:', { userId, ownerId: original.userId });
+      return res.status(403).json({ 
+        error: 'You can only view reschedule options for your own itineraries' 
+      });
+    }
+
+    // Find all rescheduled versions of this itinerary
+    const rescheduled = await prisma.aiItinerary.findMany({
+      where: {
+        source: original.source,
+        destination: original.destination,
+        preferences: original.preferences,
+        budget: original.budget,
+        userId: original.userId,
+        cacheKey: { not: cache_key } // Exclude original
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+
+    // Calculate date variations
+    const originalDuration = Math.ceil(
+      (new Date(original.endDate) - new Date(original.startDate)) / (1000 * 60 * 60 * 24)
+    );
+
+    const options = {
+      original: {
+        cache_key: original.cacheKey,
+        start_date: original.startDate,
+        end_date: original.endDate,
+        duration: originalDuration
+      },
+      rescheduled_versions: rescheduled.map(r => ({
+        cache_key: r.cacheKey,
+        start_date: r.startDate,
+        end_date: r.endDate,
+        duration: Math.ceil(
+          (new Date(r.endDate) - new Date(r.startDate)) / (1000 * 60 * 60 * 24)
+        ),
+        created_at: r.createdAt
+      })),
+      suggested_dates: generateSuggestedDates(original.startDate, originalDuration)
+    };
+
+    console.log('Reschedule options generated successfully');
+    console.log('=== RESCHEDULE OPTIONS REQUEST END ===');
+    return res.json(options);
+  } catch (err) {
+    console.error('Reschedule options error:', err);
+    return res.status(500).json({ error: 'Failed to get reschedule options' });
+  }
+});
+
+// Helper function to generate suggested date ranges
+function generateSuggestedDates(originalStart, duration) {
+  const suggestions = [];
+  const baseDate = new Date(originalStart);
+  
+  // Same dates next year
+  const nextYear = new Date(baseDate);
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
+  suggestions.push({
+    type: 'next_year',
+    start_date: nextYear.toISOString().slice(0, 10),
+    end_date: new Date(nextYear.getTime() + (duration * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10),
+    description: 'Same dates next year'
+  });
+
+  // Same dates next month
+  const nextMonth = new Date(baseDate);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  suggestions.push({
+    type: 'next_month',
+    start_date: nextMonth.toISOString().slice(0, 10),
+    end_date: new Date(nextMonth.getTime() + (duration * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10),
+    description: 'Same dates next month'
+  });
+
+  // Weekend version (if not already weekend)
+  const weekendStart = new Date(baseDate);
+  const dayOfWeek = weekendStart.getDay();
+  if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    // Move to next Saturday
+    const daysToSaturday = (6 - dayOfWeek + 7) % 7;
+    weekendStart.setDate(weekendStart.getDate() + daysToSaturday);
+    suggestions.push({
+      type: 'weekend_start',
+      start_date: weekendStart.toISOString().slice(0, 10),
+      end_date: new Date(weekendStart.getTime() + (duration * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10),
+      description: 'Weekend start version'
+    });
+  }
+
+  return suggestions;
+}
+
 module.exports = router;

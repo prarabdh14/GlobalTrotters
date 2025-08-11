@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, DollarSign, Users, Sparkles, Loader2, Search, RefreshCw, Save, Check } from 'lucide-react';
-import { aiApi } from '../api/ai';
+import { aiAPI } from '../api/ai';
 import { tripsApi } from '../api/trips';
 
 const AiItineraryGenerator = () => {
@@ -101,7 +102,7 @@ const AiItineraryGenerator = () => {
         preferences: formData.preferences
       };
 
-      const result = await aiApi.plan(payload);
+      const result = await aiAPI.planItinerary(payload);
       setItinerary(result);
     } catch (err) {
       setError(err.message || 'Failed to generate itinerary');
@@ -115,7 +116,7 @@ const AiItineraryGenerator = () => {
     
     setIsSearching(true);
     try {
-      const result = await aiApi.search({ q: searchQuery, limit: 10 });
+      const result = await aiAPI.searchItineraries(searchQuery, 10, 0);
       setSearchResults(result.results || []);
     } catch (err) {
       setError(err.message || 'Search failed');
@@ -141,7 +142,7 @@ const AiItineraryGenerator = () => {
         force_refresh: true
       };
 
-      const result = await aiApi.plan(payload);
+      const result = await aiAPI.planItinerary(payload);
       setItinerary(result);
     } catch (err) {
       setError(err.message || 'Failed to regenerate itinerary');

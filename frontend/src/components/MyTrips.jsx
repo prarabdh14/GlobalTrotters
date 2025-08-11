@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Sparkles } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Plus, MapPin, Calendar, Users, Edit, Eye, Trash2, Loader2, Sparkles } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
 import VantaGlobe from './VantaGlobe'
 import { tripsApi } from '../api/trips'
-import { aiApi } from '../api/ai'
+import { aiAPI } from '../api/ai'
 
 const MyTrips = () => {
   const [trips, setTrips] = useState([])
@@ -26,7 +26,7 @@ const MyTrips = () => {
       console.log('Fetching trips and AI itineraries...')
       const [tripsResponse, aiData] = await Promise.all([
         tripsApi.list(),
-        aiApi.getUserItineraries()
+        aiAPI.getUserItineraries()
       ])
       
       console.log('Trips response:', tripsResponse)

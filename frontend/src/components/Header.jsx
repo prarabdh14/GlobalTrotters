@@ -20,6 +20,7 @@ const Header = ({ user, onLogout }) => {
            { path: '/my-trips', label: 'My Trips' },
            { path: '/search/cities', label: 'Explore' },
            { path: '/ai-itinerary', label: 'AI Planner' },
+           { path: '/ai-itineraries', label: 'AI Itineraries' },
            { path: '/calendar', label: 'Calendar' },
            { path: '/budget', label: 'Budget' },
            { path: '/profile', label: 'Profile' }

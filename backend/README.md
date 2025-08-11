@@ -257,10 +257,47 @@ Run migrations:
 Routes:
 
 - `POST /api/ai/plan` body: `{ source, destination, start_date, end_date, preferences?, budget?, force_refresh? }`
-  - Cache-first by `cache_key` (sha256 of normalized inputs + model)
+  - Cache-first by `cache_key` (sha256 of normalized inputs + model + userId)
   - Returns cached row or creates new via OpenAI and stores prompt + outputs
+
+- `POST /api/ai/reschedule` body: `{ original_cache_key, new_start_date, new_end_date, force_refresh? }`
+  - Reschedules existing itinerary with new dates while preserving source/destination/preferences/budget
+  - Creates new cache entry for the rescheduled version
+  - Returns rescheduled itinerary with metadata about the change
+
+- `GET /api/ai/reschedule-options/:cache_key`
+  - Shows reschedule options for an existing itinerary
+  - Returns original dates, existing rescheduled versions, and suggested new date ranges
+  - Includes smart suggestions (next month, next year, weekend start)
 
 - `GET /api/ai/search?q=...&limit=20&offset=0`
   - Searches cached itineraries (source/destination/response_text)
 
-Add to server is done via `app.use('/api/ai', aiRoutes)`. 
+- `GET /api/ai/user`
+  - Gets all AI itineraries for the authenticated user
+
+Add to server is done via `app.use('/api/ai', aiRoutes)`.
+
+## Reschedule Flow
+
+1. User has existing itinerary (gets `cache_key`)
+2. User wants to reschedule → calls `/reschedule-options/:cache_key`
+3. System shows suggested dates and existing rescheduled versions
+4. User picks new dates → calls `/reschedule` with new dates
+5. System generates new itinerary (or returns cached if exists)
+6. New itinerary is stored with link to original via metadata
+
+## Frontend Components
+
+- `RescheduleModal`: Modal for selecting new dates and viewing suggestions
+- `AIItineraryCard`: Card component with reschedule button
+- `AIItineraries`: Page displaying all user's AI itineraries
+- `ItineraryView`: Enhanced with reschedule button for AI itineraries
+
+## Key Features
+
+✅ **Smart Caching**: New dates get their own cache entry
+✅ **User Isolation**: Each user only sees their own itineraries
+✅ **Smart Suggestions**: Automatic date recommendations
+✅ **Version Tracking**: Links rescheduled itineraries to originals
+✅ **Efficient**: Only calls OpenAI when truly needed 
