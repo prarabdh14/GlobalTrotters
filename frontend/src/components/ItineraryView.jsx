@@ -67,7 +67,7 @@ const ItineraryView = () => {
           setError('AI itinerary not found')
         }
       } else {
-        // Regular trip
+        // Regular trip - but check if it might be AI-generated based on description
         console.log('Fetching regular trip with ID:', id)
         const response = await tripsApi.get(id)
         console.log('Regular trip response:', response)
@@ -76,12 +76,66 @@ const ItineraryView = () => {
         const tripData = response.trip || response
         console.log('Trip data:', tripData)
         
-        // If the trip doesn't have stops loaded, we might need to fetch them separately
-        if (tripData && !tripData.stops) {
-          console.log('Trip has no stops, might need to fetch them separately')
-        }
+        // Check if this trip was created from AI (based on description or name pattern)
+        const isLikelyAiGenerated = tripData.description?.includes('AI-generated') || 
+                                   tripData.name?.includes(' to ') ||
+                                   (tripData.stops && tripData.stops.length === 0)
         
-        setTrip(tripData)
+        if (isLikelyAiGenerated) {
+          console.log('Trip appears to be AI-generated, checking for AI itinerary data...')
+          
+          // Try to find corresponding AI itinerary
+          try {
+            const aiData = await aiApi.getUserItineraries()
+            console.log('AI data for comparison:', aiData)
+            
+            // Look for AI itinerary with matching source/destination
+            const matchingAi = aiData.find(ai => {
+              const aiTitle = `${ai.source} to ${ai.destination}`
+              return aiTitle === tripData.name || 
+                     aiTitle.includes(tripData.name) || 
+                     tripData.name.includes(ai.source) ||
+                     tripData.name.includes(ai.destination)
+            })
+            
+            if (matchingAi) {
+              console.log('Found matching AI itinerary:', matchingAi)
+              setAiItinerary(matchingAi)
+              
+              // Parse the responseJson if it's a string
+              let responseData = matchingAi.responseJson
+              if (typeof responseData === 'string') {
+                try {
+                  responseData = JSON.parse(responseData)
+                } catch (parseError) {
+                  console.error('Error parsing AI response JSON:', parseError)
+                  responseData = {}
+                }
+              }
+              
+              console.log('Parsed AI response data:', responseData)
+              
+              // Merge trip data with AI data
+              const enhancedTripData = {
+                ...tripData,
+                isAiGenerated: true,
+                days: responseData?.daily_plan || [],
+                aiDescription: responseData?.trip_summary?.route || tripData.description
+              }
+              
+              console.log('Enhanced trip data:', enhancedTripData)
+              setTrip(enhancedTripData)
+            } else {
+              console.log('No matching AI itinerary found, using regular trip data')
+              setTrip(tripData)
+            }
+          } catch (aiError) {
+            console.error('Error fetching AI data:', aiError)
+            setTrip(tripData)
+          }
+        } else {
+          setTrip(tripData)
+        }
       }
     } catch (err) {
       console.error('Error fetching trip:', err)
@@ -201,102 +255,120 @@ const ItineraryView = () => {
     >
       <div className="container py-8 relative z-10">
       <div className="mb-8">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-              {trip.title}
-              {trip.isAiGenerated && (
-                <span className="px-2 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                  <Sparkles size={14} className="inline mr-1" />
-                  AI
-                </span>
-              )}
-            </h1>
-            <p className="text-gray-600 flex items-center gap-2">
-              <Calendar size={16} />
-              {formatDateRange(trip.startDate, trip.endDate)}
-            </p>
-            <p className="text-gray-600 flex items-center gap-2 mt-1">
-              <MapPin size={16} />
-              {getDestinations(trip).join(' → ')}
-            </p>
-            {trip.description && (
-              <p className="text-gray-600 mt-2">{trip.description}</p>
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-4">
+              <h1 className="text-4xl font-bold text-blue-300">
+                {trip.title}
+              </h1>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="flex items-center gap-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+                <Calendar size={20} className="text-blue-400" />
+                <div>
+                  <p className="text-sm text-gray-400">Duration</p>
+                  <p className="font-semibold text-white">{formatDateRange(trip.startDate, trip.endDate)}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+                <MapPin size={20} className="text-green-400" />
+                <div>
+                  <p className="text-sm text-gray-400">Route</p>
+                  <p className="font-semibold text-white">{getDestinations(trip).join(' → ')}</p>
+                </div>
+              </div>
+            </div>
+            
+            {(trip.aiDescription || trip.description) && (
+              <div className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-lg border border-blue-500/20">
+                <p className="text-white/90 leading-relaxed">{trip.aiDescription || trip.description}</p>
+              </div>
             )}
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button 
               onClick={handleShare}
-              className="btn btn-outline text-white/80 border-white/30 hover:text-blue-300 hover:border-blue-400"
+              className="px-1 py-2 text-sm rounded-lg border border-white/30 text-white/80 hover:bg-white/10 transition-all duration-200 flex items-center gap-1"
             >
-              <Share2 size={16} />
+              <Share2 size={14} />
               Share
             </button>
-            <Link to={`/trip/${id}/build`} className="btn btn-primary">
-              <Edit size={16} />
+            <Link 
+              to={`/trip/${id}/build`} 
+              className="px-1 py-1 text-sm rounded-lg bg-white/10 border border-white/30 text-white/80 hover:bg-white/20 transition-all duration-200 flex items-center gap-1"
+            >
+              <Edit size={14} />
               Edit
             </Link>
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-3 mb-8">
           <button 
             onClick={() => setViewMode('timeline')}
-            className={`btn ${viewMode === 'timeline' ? 'btn-primary' : 'btn-outline'}`}
+            className={`px-4 h-12 rounded-xl font-medium transition-all duration-300 border flex items-center gap-2 ${
+              viewMode === 'timeline' 
+                ? 'btn btn-outline hover:border-blue-500 hover:text-blue-600' 
+                : 'bg-transparent text-white/80 border-white/30 hover:bg-white/10'
+            }`}
           >
+            <Calendar size={16} />
             Timeline View
           </button>
           <button 
             onClick={() => setViewMode('calendar')}
-            className={`btn ${viewMode === 'calendar' ? 'btn-primary' : 'btn-outline'}`}
+            className={`px-4 h-12 rounded-xl font-medium transition-all duration-300 border flex items-center gap-2 ${
+              viewMode === 'calendar' 
+                ? 'btn btn-outline hover:border-blue-500 hover:text-blue-600' 
+                : 'bg-transparent text-white/80 border-white/30 hover:bg-white/10'
+            }`}
           >
+            <Calendar size={16} />
             Calendar View
           </button>
         </div>
       </div>
 
-      {/* Debug section - remove this later */}
-      <div className="card bg-yellow-50 border-yellow-200 mb-6">
-        <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
-        <pre className="text-xs text-yellow-700 overflow-auto">
-          {JSON.stringify({ trip, isAiGenerated: trip?.isAiGenerated, days: trip?.days, stops: trip?.stops }, null, 2)}
-        </pre>
-      </div>
+
 
       {viewMode === 'timeline' && (
         <div className="space-y-8">
           {trip.isAiGenerated && trip.days ? (
             // AI-generated itinerary view
             trip.days.map((day, index) => (
-              <div key={index} className="card bg-white border border-gray-200 text-gray-900">
-                <div className="flex justify-between items-center mb-6">
+              <div key={index} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 mb-6 shadow-lg">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Day {day.day} - {formatDate(day.date)}</h2>
-                    <p className="text-gray-700 flex items-center gap-2">
+                    <h2 className="text-2xl font-bold text-white mb-2">Day {day.day}</h2>
+                    <p className="text-white/80 text-lg mb-1">{formatDate(day.date)}</p>
+                    <p className="text-blue-300 flex items-center gap-2">
                       <MapPin size={16} />
                       {day.city}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-semibold text-green-600">
+                    <div className="text-2xl font-bold text-green-400">
                       ₹{day.estimated_daily_cost || 0}
                     </div>
-                    <div className="text-sm text-gray-600">Estimated cost</div>
+                    <div className="text-sm text-white/60">Estimated cost</div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* Morning Activities */}
                   {day.morning && day.morning.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-blue-600">Morning</h3>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-blue-300 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        Morning
+                      </h3>
                       {day.morning.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex items-center gap-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="text-sm font-medium text-blue-700 min-w-[80px]">
-                            Morning
-                          </div>
+                        <div key={actIndex} className="flex items-start gap-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
-                            <h3 className="font-medium mb-1 text-gray-900">{activity}</h3>
+                            <p className="text-white font-medium">{activity}</p>
                           </div>
                         </div>
                       ))}
@@ -305,15 +377,16 @@ const ItineraryView = () => {
 
                   {/* Afternoon Activities */}
                   {day.afternoon && day.afternoon.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-orange-600">Afternoon</h3>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-orange-300 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                        Afternoon
+                      </h3>
                       {day.afternoon.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex items-center gap-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                          <div className="text-sm font-medium text-orange-700 min-w-[80px]">
-                            Afternoon
-                          </div>
+                        <div key={actIndex} className="flex items-start gap-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
-                            <h3 className="font-medium mb-1 text-gray-900">{activity}</h3>
+                            <p className="text-white font-medium">{activity}</p>
                           </div>
                         </div>
                       ))}
@@ -322,15 +395,16 @@ const ItineraryView = () => {
 
                   {/* Evening Activities */}
                   {day.evening && day.evening.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-purple-600">Evening</h3>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-purple-300 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                        Evening
+                      </h3>
                       {day.evening.map((activity, actIndex) => (
-                        <div key={actIndex} className="flex items-center gap-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div className="text-sm font-medium text-purple-700 min-w-[80px]">
-                            Evening
-                          </div>
+                        <div key={actIndex} className="flex items-start gap-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
-                            <h3 className="font-medium mb-1 text-gray-900">{activity}</h3>
+                            <p className="text-white font-medium">{activity}</p>
                           </div>
                         </div>
                       ))}
@@ -339,20 +413,23 @@ const ItineraryView = () => {
 
                   {/* Meals */}
                   {day.meals && (
-                    <div className="space-y-2">
-                      <h3 className="font-medium text-green-600">Meals</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="text-sm font-medium text-green-700">Breakfast</div>
-                          <div className="text-sm text-gray-700">{day.meals.breakfast}</div>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-green-300 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        Meals
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="text-sm font-semibold text-green-300 mb-1">Breakfast</div>
+                          <div className="text-white/90">{day.meals.breakfast}</div>
                         </div>
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="text-sm font-medium text-green-700">Lunch</div>
-                          <div className="text-sm text-gray-700">{day.meals.lunch}</div>
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="text-sm font-semibold text-green-300 mb-1">Lunch</div>
+                          <div className="text-white/90">{day.meals.lunch}</div>
                         </div>
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <div className="text-sm font-medium text-green-700">Dinner</div>
-                          <div className="text-sm text-gray-700">{day.meals.dinner}</div>
+                        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg backdrop-blur-sm">
+                          <div className="text-sm font-semibold text-green-300 mb-1">Dinner</div>
+                          <div className="text-white/90">{day.meals.dinner}</div>
                         </div>
                       </div>
                     </div>
@@ -363,38 +440,40 @@ const ItineraryView = () => {
           ) : trip.stops ? (
             // Regular trip view
             trip.stops.map((stop, index) => (
-              <div key={index} className="card bg-white border border-gray-200 text-gray-900">
-                <div className="flex justify-between items-center mb-6">
+              <div key={index} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 mb-6 shadow-lg">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-2xl font-bold text-white mb-2">
                       {stop.startDate ? formatDate(stop.startDate) : `Stop ${index + 1}`}
                     </h2>
-                    <p className="text-gray-700 flex items-center gap-2">
+                    <p className="text-green-300 flex items-center gap-2">
                       <MapPin size={16} />
                       {stop.city?.name || 'Unknown City'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-600">Stop {index + 1}</div>
+                    <div className="text-sm text-white/60">Stop {index + 1}</div>
                   </div>
                 </div>
 
                 {stop.activities && stop.activities.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {stop.activities.map((tripActivity, actIndex) => (
-                      <div key={actIndex} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg">
-                        <div className="text-sm font-medium text-blue-700 min-w-[80px]">
-                          {tripActivity.startTime ? formatDate(tripActivity.startTime) : 'TBD'}
-                        </div>
+                      <div key={actIndex} className="flex items-start gap-4 p-4 bg-white/10 border border-white/20 rounded-lg backdrop-blur-sm">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
                         <div className="flex-1">
-                          <h3 className="font-medium mb-1 text-gray-900">{tripActivity.activity?.name || 'Activity'}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-700">
+                          <h3 className="font-semibold text-white mb-1">{tripActivity.activity?.name || 'Activity'}</h3>
+                          <div className="flex items-center gap-4 text-sm text-white/80">
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />
+                              {tripActivity.startTime ? formatDate(tripActivity.startTime) : 'TBD'}
+                            </span>
                             <span className="flex items-center gap-1">
                               <DollarSign size={14} />
                               ₹{tripActivity.activity?.cost || 0}
                             </span>
                             {tripActivity.note && (
-                              <span className="text-gray-600">{tripActivity.note}</span>
+                              <span className="text-white/70">{tripActivity.note}</span>
                             )}
                           </div>
                         </div>
@@ -402,21 +481,26 @@ const ItineraryView = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No activities planned for this stop</p>
-                    <p className="text-sm mt-2">Add activities to see them here</p>
+                  <div className="text-center py-8">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6">
+                      <p className="text-white/60 mb-2">No activities planned for this stop</p>
+                      <p className="text-sm text-white/40">Add activities to see them here</p>
+                    </div>
                   </div>
                 )}
               </div>
             ))
           ) : trip.stops && trip.stops.length === 0 ? (
             <div className="text-center py-12">
-              <div className="card bg-blue-50 border-blue-200 max-w-md mx-auto">
-                <div className="text-blue-800">
-                  <h4 className="font-semibold mb-2">No Stops Added Yet</h4>
-                  <p className="mb-4">This trip doesn't have any stops planned yet.</p>
-                  <Link to={`/trip/${id}/build`} className="btn btn-primary">
-                    <Edit size={16} className="mr-2" />
+              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-500/20 rounded-xl p-8 max-w-md mx-auto">
+                <div className="text-white">
+                  <h4 className="text-xl font-semibold mb-3">No Stops Added Yet</h4>
+                  <p className="mb-6 text-white/80">This trip doesn't have any stops planned yet.</p>
+                  <Link 
+                    to={`/trip/${id}/build`} 
+                    className="btn btn-primary inline-flex items-center gap-2"
+                  >
+                    <Edit size={16} />
                     Add Stops
                   </Link>
                 </div>
@@ -424,7 +508,9 @@ const ItineraryView = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600">No itinerary details available</p>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-8 max-w-md mx-auto">
+                <p className="text-white/60">No itinerary details available</p>
+              </div>
             </div>
           )}
         </div>
