@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Globe, User, Mail, Phone, MapPin } from 'lucide-react'
+import { Globe, User, Mail, Phone, MapPin, Lock, Eye, EyeOff } from 'lucide-react'
 import { authApi } from '../api/auth'
 
 const RegistrationScreen = ({ onLogin }) => {
@@ -11,23 +11,35 @@ const RegistrationScreen = ({ onLogin }) => {
     phone: '',
     city: '',
     country: '',
-    additionalInfo: ''
+    additionalInfo: '',
+    password: '',
+    confirmPassword: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
+    if (formData.password.length < 6) {
+      setIsLoading(false)
+      return setError('Password must be at least 6 characters long')
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setIsLoading(false)
+      return setError('Passwords do not match')
+    }
+
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim()
-      const password = cryptoRandomPassword()
       const { user } = await authApi.register({
         name: fullName,
         email: formData.email,
-        password
+        password: formData.password
       })
       onLogin(user)
     } catch (err) {
@@ -100,6 +112,57 @@ const RegistrationScreen = ({ onLogin }) => {
               />
             </div>
 
+            <div className="grid grid-2 gap-4 mb-4">
+              <div className="form-group">
+                <label className="form-label flex items-center gap-2">
+                  <Lock size={16} className="text-blue-600" />
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="form-input pr-12"
+                    placeholder="Enter a password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label flex items-center gap-2">
+                  <Lock size={16} className="text-blue-600" />
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="form-input pr-12"
+                    placeholder="Re-enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label">
                 <Phone size={16} className="inline mr-2" />
@@ -170,13 +233,6 @@ const RegistrationScreen = ({ onLogin }) => {
       </div>
     </div>
   )
-}
-
-function cryptoRandomPassword() {
-  // Generate a simple random password when the registration form doesn't collect one
-  // In a real app, you'd collect password fields; here we keep the UI minimal
-  const random = Math.random().toString(36).slice(-8)
-  return `Gt@${random}`
 }
 
 export default RegistrationScreen
