@@ -129,7 +129,7 @@ const MyTrips = () => {
                   onClick={() => setFilter(status)}
                   className={`px-4 h-12 rounded-xl font-medium transition-all duration-300 border ${
                     filter === status
-                      ? 'bg-transparent text-white border-blue-400/70 hover:bg-blue-500/10' 
+                      ? 'btn btn-outline flex-1 text-center hover:border-blue-500 hover:text-blue-600'
                       : 'bg-transparent text-white/80 border-white/30 hover:bg-white/10'
                   }`}
                 >
