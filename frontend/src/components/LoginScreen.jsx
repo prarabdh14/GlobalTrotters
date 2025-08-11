@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Globe, Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import VantaGlobe from './VantaGlobe'
+import { authApi } from '../api/auth'
 
 const LoginScreen = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +11,7 @@ const LoginScreen = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     setIsVisible(true)
@@ -19,16 +20,19 @@ const LoginScreen = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    onLogin({
-      id: 1,
-      name: 'John Doe',
-      email: formData.email
-    })
-    setIsLoading(false)
+    setError(null)
+
+    try {
+      const { user } = await authApi.login({
+        email: formData.email,
+        password: formData.password
+      })
+      onLogin(user)
+    } catch (err) {
+      setError(err.message || 'Failed to sign in')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -39,20 +43,17 @@ const LoginScreen = ({ onLogin }) => {
   }
 
   return (
-    <VantaGlobe
-      color={0x3f51b5}
-      color2={0xffffff}
-      backgroundColor={0x0a0a0a}
-      size={1.00}
-      points={10.00}
-      maxDistance={20.00}
-      spacing={15.00}
-      showDots={true}
-    >
-      <div className="min-h-screen flex items-center justify-center py-12 px-4 relative">
-        <div className={`max-w-md w-full relative z-10 transition-all duration-1000 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
+        <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-4000"></div>
+      </div>
+
+      <div className={`max-w-md w-full relative z-10 transition-all duration-1000 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}>
         {/* Logo Section */}
         <div className="text-center mb-8 animate-fade-in-up">
           <div className="flex justify-center items-center gap-3 mb-6">
@@ -115,6 +116,10 @@ const LoginScreen = ({ onLogin }) => {
               </div>
             </div>
 
+            {error && (
+              <div className="text-red-600 text-sm">{error}</div>
+            )}
+
             <button 
               type="submit" 
               disabled={isLoading}
@@ -155,8 +160,7 @@ const LoginScreen = ({ onLogin }) => {
           ))}
         </div>
       </div>
-      </div>
-    </VantaGlobe>
+    </div>
   )
 }
 

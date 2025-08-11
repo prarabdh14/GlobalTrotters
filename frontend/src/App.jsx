@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginScreen from './components/LoginScreen'
 import RegistrationScreen from './components/RegistrationScreen'
@@ -14,10 +14,27 @@ import TripCalendar from './components/TripCalendar'
 import UserProfile from './components/UserProfile'
 import AdminDashboard from './components/AdminDashboard'
 import Header from './components/Header'
+import { authApi } from './api/auth'
+import { getAuthToken } from './api/client'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (getAuthToken()) {
+          const { user } = await authApi.me()
+          setCurrentUser(user)
+          setIsAuthenticated(true)
+        }
+      } catch {
+        // token invalid or not present; remain logged out
+      }
+    }
+    init()
+  }, [])
 
   const handleLogin = (userData) => {
     setIsAuthenticated(true)
@@ -25,6 +42,7 @@ function App() {
   }
 
   const handleLogout = () => {
+    authApi.logout()
     setIsAuthenticated(false)
     setCurrentUser(null)
   }
