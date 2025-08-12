@@ -16,11 +16,40 @@ import {
   Download,
   RefreshCw,
   LogOut,
-  Shield
+  Shield,
+  PieChart,
+  BarChart,
+  LineChart
 } from 'lucide-react';
 import { adminApi } from '../api/admin';
 import { authApi } from '../api/auth';
 import VantaGlobe from './VantaGlobe';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement,
+} from 'chart.js';
+import { Pie, Bar, Line } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  BarElement
+);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -93,6 +122,181 @@ const AdminDashboard = () => {
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString();
+  };
+
+  // Chart configuration
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+          font: {
+            size: 12
+          },
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'rgba(255, 255, 255, 0.9)',
+        bodyColor: 'rgba(255, 255, 255, 0.8)',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true
+      }
+    }
+  };
+
+  // Prepare chart data
+  const prepareChartData = () => {
+    if (!analyticsData) return {};
+
+    // User Growth Pie Chart
+    const userGrowthData = {
+      labels: ['New Users', 'Returning Users', 'Active Users'],
+      datasets: [{
+        data: [
+          analyticsData.userGrowth?.newUsers || 0,
+          analyticsData.userGrowth?.returningUsers || 0,
+          analyticsData.userGrowth?.activeUsers || 0
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',   // Blue
+          'rgba(16, 185, 129, 0.8)',   // Green
+          'rgba(245, 158, 11, 0.8)'    // Yellow
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)'
+        ],
+        borderWidth: 2,
+        hoverBackgroundColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)'
+        ]
+      }]
+    };
+
+    // Trip Status Distribution
+    const tripStatusData = {
+      labels: ['Planning', 'Ongoing', 'Completed', 'Cancelled'],
+      datasets: [{
+        data: [
+          analyticsData.tripStatus?.planning || 0,
+          analyticsData.tripStatus?.ongoing || 0,
+          analyticsData.tripStatus?.completed || 0,
+          analyticsData.tripStatus?.cancelled || 0
+        ],
+        backgroundColor: [
+          'rgba(99, 102, 241, 0.8)',   // Indigo
+          'rgba(34, 197, 94, 0.8)',    // Green
+          'rgba(59, 130, 246, 0.8)',   // Blue
+          'rgba(239, 68, 68, 0.8)'     // Red
+        ],
+        borderColor: [
+          'rgba(99, 102, 241, 1)',
+          'rgba(34, 197, 94, 1)',
+          'rgba(59, 130, 246, 1)',
+          'rgba(239, 68, 68, 1)'
+        ],
+        borderWidth: 2
+      }]
+    };
+
+    // Popular Cities Bar Chart
+    const popularCitiesData = {
+      labels: analyticsData.popularCities?.slice(0, 8).map(city => city.name) || [],
+      datasets: [{
+        label: 'Number of Trips',
+        data: analyticsData.popularCities?.slice(0, 8).map(city => city.tripCount) || [],
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    };
+
+    // Monthly Trends Line Chart
+    const monthlyTrendsData = {
+      labels: analyticsData.monthlyTrends?.map(trend => 
+        new Date(trend.month).toLocaleDateString('en-US', { month: 'short' })
+      ) || [],
+      datasets: [
+        {
+          label: 'Users',
+          data: analyticsData.monthlyTrends?.map(trend => trend.unique_users) || [],
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+          pointBorderColor: 'rgba(255, 255, 255, 1)',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        },
+        {
+          label: 'Trips',
+          data: analyticsData.monthlyTrends?.map(trend => trend.total_trips) || [],
+          borderColor: 'rgba(16, 185, 129, 1)',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+          pointBorderColor: 'rgba(255, 255, 255, 1)',
+          pointBorderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }
+      ]
+    };
+
+    // Budget Distribution
+    const budgetData = {
+      labels: ['Transport', 'Accommodation', 'Activities', 'Food', 'Other'],
+      datasets: [{
+        data: [
+          analyticsData.budgetDistribution?.transport || 25,
+          analyticsData.budgetDistribution?.accommodation || 35,
+          analyticsData.budgetDistribution?.activities || 20,
+          analyticsData.budgetDistribution?.food || 15,
+          analyticsData.budgetDistribution?.other || 5
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',   // Blue
+          'rgba(16, 185, 129, 0.8)',   // Green
+          'rgba(245, 158, 11, 0.8)',   // Yellow
+          'rgba(239, 68, 68, 0.8)',    // Red
+          'rgba(139, 92, 246, 0.8)'    // Purple
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(139, 92, 246, 1)'
+        ],
+        borderWidth: 2
+      }]
+    };
+
+    return {
+      userGrowth: userGrowthData,
+      tripStatus: tripStatusData,
+      popularCities: popularCitiesData,
+      monthlyTrends: monthlyTrendsData,
+      budgetDistribution: budgetData
+    };
   };
 
   const handleLogout = (e) => {
@@ -525,53 +729,182 @@ const AdminDashboard = () => {
         {/* Analytics Tab */}
         {activeTab === 'analytics' && analyticsData && (
           <div className="space-y-8">
-            {/* Popular Cities Chart */}
-            <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
-              <h3 className="text-xl font-semibold text-white mb-4">Popular Destinations</h3>
-              <div className="space-y-3">
-                {analyticsData.popularCities.map((city, index) => (
-                  <div key={city.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-blue-400 font-semibold text-sm">{index + 1}</span>
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">{city.name}</p>
-                        <p className="text-white/60 text-sm">{city.country}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-semibold">{city.tripCount} trips</p>
-                      <p className="text-white/60 text-sm">Cost: ₹{city.costIndex}</p>
-                    </div>
-                  </div>
-                ))}
+            {/* Chart Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* User Growth Pie Chart */}
+              <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-3 mb-6">
+                  <PieChart className="w-6 h-6 text-blue-400" />
+                  <h3 className="text-xl font-semibold text-white">User Growth Distribution</h3>
+                </div>
+                <div className="h-64">
+                  <Pie data={prepareChartData().userGrowth} options={chartOptions} />
+                </div>
+              </div>
+
+              {/* Trip Status Pie Chart */}
+              <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-3 mb-6">
+                  <PieChart className="w-6 h-6 text-green-400" />
+                  <h3 className="text-xl font-semibold text-white">Trip Status Distribution</h3>
+                </div>
+                <div className="h-64">
+                  <Pie data={prepareChartData().tripStatus} options={chartOptions} />
+                </div>
+              </div>
+
+              {/* Budget Distribution Pie Chart */}
+              <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-3 mb-6">
+                  <PieChart className="w-6 h-6 text-purple-400" />
+                  <h3 className="text-xl font-semibold text-white">Budget Distribution</h3>
+                </div>
+                <div className="h-64">
+                  <Pie data={prepareChartData().budgetDistribution} options={chartOptions} />
+                </div>
+              </div>
+
+              {/* Popular Cities Bar Chart */}
+              <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-3 mb-6">
+                  <BarChart className="w-6 h-6 text-orange-400" />
+                  <h3 className="text-xl font-semibold text-white">Popular Destinations</h3>
+                </div>
+                <div className="h-64">
+                  <Bar 
+                    data={prepareChartData().popularCities} 
+                    options={{
+                      ...chartOptions,
+                      scales: {
+                        x: {
+                          ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                          ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                          grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                      }
+                    }} 
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Monthly Trends */}
+            {/* Monthly Trends Line Chart - Full Width */}
             <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
-              <h3 className="text-xl font-semibold text-white mb-4">Monthly Trends</h3>
-              <div className="space-y-3">
-                {analyticsData.monthlyTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium">
-                        {new Date(trend.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="text-white font-semibold">{trend.unique_users}</p>
-                        <p className="text-white/60 text-sm">Users</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-white font-semibold">{trend.total_trips}</p>
-                        <p className="text-white/60 text-sm">Trips</p>
-                      </div>
-                    </div>
+              <div className="flex items-center gap-3 mb-6">
+                <LineChart className="w-6 h-6 text-cyan-400" />
+                <h3 className="text-xl font-semibold text-white">Monthly Trends</h3>
+              </div>
+              <div className="h-80">
+                <Line 
+                  data={prepareChartData().monthlyTrends} 
+                  options={{
+                    ...chartOptions,
+                    scales: {
+                      x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                      },
+                      y: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                      }
+                    }
+                  }} 
+                />
+              </div>
+            </div>
+
+            {/* Additional Analytics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Platform Stats */}
+              <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-md border border-blue-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <Activity className="w-5 h-5 text-blue-400" />
+                  <h4 className="text-white font-semibold">Platform Activity</h4>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Total Users</span>
+                    <span className="text-white font-semibold">{formatNumber(dashboardData?.totalUsers || 0)}</span>
                   </div>
-                ))}
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Active Users</span>
+                    <span className="text-white font-semibold">{formatNumber(dashboardData?.activeUsers || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Total Trips</span>
+                    <span className="text-white font-semibold">{formatNumber(dashboardData?.totalTrips || 0)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenue Stats */}
+              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md border border-green-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="w-5 h-5 text-green-400" />
+                  <h4 className="text-white font-semibold">Revenue Metrics</h4>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Avg Trip Cost</span>
+                    <span className="text-white font-semibold">₹{formatNumber(dashboardData?.avgTripCost || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Total Revenue</span>
+                    <span className="text-white font-semibold">₹{formatNumber(dashboardData?.totalRevenue || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Growth Rate</span>
+                    <span className="text-green-400 font-semibold">+{dashboardData?.growthRate || 0}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md border border-orange-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-5 h-5 text-orange-400" />
+                  <h4 className="text-white font-semibold">User Engagement</h4>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Avg Session</span>
+                    <span className="text-white font-semibold">{dashboardData?.avgSessionTime || 0}m</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Bounce Rate</span>
+                    <span className="text-white font-semibold">{dashboardData?.bounceRate || 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Retention</span>
+                    <span className="text-orange-400 font-semibold">{dashboardData?.retentionRate || 0}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Stats */}
+              <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-md border border-purple-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-4">
+                  <BarChart3 className="w-5 h-5 text-purple-400" />
+                  <h4 className="text-white font-semibold">Performance</h4>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Success Rate</span>
+                    <span className="text-white font-semibold">{dashboardData?.successRate || 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Error Rate</span>
+                    <span className="text-white font-semibold">{dashboardData?.errorRate || 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/70 text-sm">Uptime</span>
+                    <span className="text-purple-400 font-semibold">{dashboardData?.uptime || 0}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
