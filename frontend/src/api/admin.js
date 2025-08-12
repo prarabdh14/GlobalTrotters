@@ -1,19 +1,30 @@
 import { http } from './client';
 
 export const adminApi = {
-  overview: () => http.get('/api/admin/overview'),
-  users: (params = {}) => http.get(`/api/admin/users${toQuery(params)}`),
-  userDetails: (id) => http.get(`/api/admin/users/${id}`),
-  analytics: (params = {}) => http.get(`/api/admin/analytics${toQuery(params)}`),
-  monthlyAnalytics: (params = {}) => http.get(`/api/admin/analytics/monthly${toQuery(params)}`),
-  deleteUser: (id) => http.del(`/api/admin/users/${id}`),
+  // Admin login
+  login: (credentials) => http.post('/api/admin/login', credentials),
+
+  // Get dashboard stats
+  getDashboardStats: () => http.get('/api/admin/dashboard'),
+
+  // Get users with pagination
+  getUsers: (params = {}) => http.get(`/api/admin/users${toQuery(params)}`),
+
+  // Get trips with pagination
+  getTrips: (params = {}) => http.get(`/api/admin/trips${toQuery(params)}`),
+
+  // Get analytics
+  getAnalytics: () => http.get('/api/admin/analytics'),
 };
 
+// Helper function to convert params object to query string
 function toQuery(params) {
-  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
-  if (entries.length === 0) return '';
-  const q = new URLSearchParams(entries).toString();
-  return `?${q}`;
-}
-
-export default adminApi; 
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, value);
+    }
+  });
+  const query = searchParams.toString();
+  return query ? `?${query}` : '';
+} 

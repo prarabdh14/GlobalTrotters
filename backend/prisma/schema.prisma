@@ -30,6 +30,18 @@ model User {
   aiItineraries AiItinerary[]
 }
 
+model Admin {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique
+  password    String
+  name        String
+  role        String    @default("admin") // admin, super_admin
+  isActive    Boolean   @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Trip {
   id          Int       @id @default(autoincrement())
   user        User      @relation(fields: [userId], references: [id])

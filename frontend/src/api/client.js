@@ -15,6 +15,7 @@ export function getAuthToken() {
   try {
     const stored = localStorage.getItem('gt_token');
     authToken = stored || null;
+    console.log('getAuthToken called, token:', authToken ? 'present' : 'missing');
   } catch {}
   return authToken;
 }
@@ -29,6 +30,9 @@ async function request(path, { method = 'GET', body, headers = {}, auth = true }
 
   if (auth && getAuthToken()) {
     finalHeaders['Authorization'] = `Bearer ${getAuthToken()}`;
+    console.log('Adding Authorization header for:', path);
+  } else if (auth) {
+    console.log('No auth token found for:', path);
   }
 
   const res = await fetch(url, {

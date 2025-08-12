@@ -153,6 +153,7 @@ router.post('/plan', async (req, res) => {
   try {
     console.log('=== AI PLAN REQUEST START ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     
     const { source, destination, start_date, end_date, preferences, budget, force_refresh } = req.body || {};
     console.log('Extracted params:', { source, destination, start_date, end_date, preferences, budget, force_refresh });

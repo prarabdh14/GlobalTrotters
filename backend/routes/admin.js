@@ -1,21 +1,162 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
 const prisma = require('../config/database');
+const { auth } = require('../middleware/auth');
 const { adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get platform overview statistics
-router.get('/overview', adminAuth, async (req, res) => {
+// Admin login validation
+const validateAdminLogin = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('password').notEmpty().withMessage('Password is required'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: errors.array() 
+      });
+    }
+    next();
+  }
+];
+
+// Admin login
+router.post('/login', validateAdminLogin, async (req, res) => {
   try {
+    const { email, password } = req.body;
+
+    // Find admin
+    const admin = await prisma.admin.findUnique({
+      where: { email, isActive: true }
+    });
+
+    if (!admin) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Update last login
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { lastLogin: new Date() }
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        adminId: admin.id, 
+        email: admin.email, 
+        role: admin.role,
+        isAdmin: true 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Return admin data (excluding password)
+    const { password: _, ...adminData } = admin;
+
+    res.json({
+      message: 'Admin login successful',
+      admin: adminData,
+      token
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get admin dashboard stats (protected route)
+router.get('/dashboard', adminAuth, async (req, res) => {
+  try {
+    // Get user statistics
     const totalUsers = await prisma.user.count();
+    const newUsersThisMonth = await prisma.user.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
+      }
+    });
+
+    // Get trip statistics
     const totalTrips = await prisma.trip.count();
-    const totalCities = await prisma.city.count();
-    const totalActivities = await prisma.activity.count();
+    const tripsThisMonth = await prisma.trip.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
+      }
+    });
+
+    // Get AI itinerary statistics
+    const totalAiItineraries = await prisma.aiItinerary.count();
+    const aiItinerariesThisMonth = await prisma.aiItinerary.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
+      }
+    });
+
+    // Get top cities
+    const topCities = await prisma.city.findMany({
+      take: 10,
+      orderBy: {
+        popularity: 'desc'
+      },
+      select: {
+        id: true,
+        name: true,
+        country: true,
+        popularity: true,
+        costIndex: true
+      }
+    });
+
+    // Get user growth over time (last 6 months) - using Prisma instead of raw SQL
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const userGrowth = await prisma.user.groupBy({
+      by: ['createdAt'],
+      where: {
+        createdAt: {
+          gte: sixMonthsAgo
+        }
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Get trip growth over time (last 6 months) - using Prisma instead of raw SQL
+    const tripGrowth = await prisma.trip.groupBy({
+      by: ['createdAt'],
+      where: {
+        createdAt: {
+          gte: sixMonthsAgo
+        }
+      },
+      _count: {
+        id: true
+      }
+    });
 
     // Get recent activity
     const recentUsers = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
       take: 5,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
@@ -25,9 +166,14 @@ router.get('/overview', adminAuth, async (req, res) => {
     });
 
     const recentTrips = await prisma.trip.findMany({
-      orderBy: { createdAt: 'desc' },
       take: 5,
-      include: {
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
         user: {
           select: {
             name: true,
@@ -37,202 +183,158 @@ router.get('/overview', adminAuth, async (req, res) => {
       }
     });
 
-    // Calculate growth metrics
-    const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastYear = new Date(now.getFullYear() - 1, 0, 1);
-
-    const usersThisMonth = await prisma.user.count({
-      where: { createdAt: { gte: lastMonth } }
-    });
-
-    const tripsThisMonth = await prisma.trip.count({
-      where: { createdAt: { gte: lastMonth } }
-    });
-
-    const usersThisYear = await prisma.user.count({
-      where: { createdAt: { gte: lastYear } }
-    });
-
-    const tripsThisYear = await prisma.trip.count({
-      where: { createdAt: { gte: lastYear } }
-    });
-
     res.json({
-      overview: {
+      stats: {
         totalUsers,
+        newUsersThisMonth,
         totalTrips,
-        totalCities,
-        totalActivities,
-        usersThisMonth,
         tripsThisMonth,
-        usersThisYear,
-        tripsThisYear
+        totalAiItineraries,
+        aiItinerariesThisMonth
       },
-      recentActivity: {
-        users: recentUsers,
-        trips: recentTrips
-      }
+      topCities,
+      userGrowth,
+      tripGrowth,
+      recentUsers,
+      recentTrips
     });
   } catch (error) {
-    console.error('Get admin overview error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
 
-// Get user management data
+// Get all users (with pagination)
 router.get('/users', adminAuth, async (req, res) => {
   try {
-    const { search, limit = 20, offset = 0 } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
 
-    let whereClause = {};
-    if (search) {
-      whereClause.OR = [
+    const where = search ? {
+      OR: [
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } }
-      ];
-    }
+      ]
+    } : {};
 
     const users = await prisma.user.findMany({
-      where: whereClause,
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
         email: true,
         createdAt: true,
+        isEmailVerified: true,
+        googleId: true,
         _count: {
           select: {
-            trips: true
+            trips: true,
+            aiItineraries: true
           }
         }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: parseInt(limit),
-      skip: parseInt(offset)
+      }
     });
 
-    const totalUsers = await prisma.user.count({ where: whereClause });
+    const totalUsers = await prisma.user.count({ where });
 
     res.json({
       users,
       pagination: {
+        page,
+        limit,
         total: totalUsers,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        hasMore: parseInt(offset) + parseInt(limit) < totalUsers
+        pages: Math.ceil(totalUsers / limit)
       }
     });
   } catch (error) {
     console.error('Get users error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-// Get user details
-router.get('/users/:id', adminAuth, async (req, res) => {
+// Get all trips (with pagination)
+router.get('/trips', adminAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
 
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(id) },
+    const where = search ? {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ]
+    } : {};
+
+    const trips = await prisma.trip.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
       include: {
-        trips: {
-          include: {
-            stops: {
-              include: {
-                city: true
-              }
-            },
-            budgetItems: true
-          },
-          orderBy: { createdAt: 'desc' }
-        },
-        _count: {
+        user: {
           select: {
-            trips: true
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        stops: {
+          include: {
+            city: {
+              select: {
+                name: true,
+                country: true
+              }
+            }
           }
         }
       }
     });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Calculate user statistics
-    const totalBudget = user.trips.reduce((sum, trip) => {
-      return sum + trip.budgetItems.reduce((tripSum, item) => tripSum + item.amount, 0);
-    }, 0);
-
-    const visitedCities = new Set();
-    const visitedCountries = new Set();
-    
-    user.trips.forEach(trip => {
-      trip.stops.forEach(stop => {
-        visitedCities.add(stop.city.name);
-        visitedCountries.add(stop.city.country);
-      });
-    });
+    const totalTrips = await prisma.trip.count({ where });
 
     res.json({
-      user,
-      statistics: {
-        totalTrips: user._count.trips,
-        totalBudget,
-        visitedCities: Array.from(visitedCities).length,
-        visitedCountries: Array.from(visitedCountries).length,
-        averageBudgetPerTrip: user._count.trips > 0 ? totalBudget / user._count.trips : 0
+      trips,
+      pagination: {
+        page,
+        limit,
+        total: totalTrips,
+        pages: Math.ceil(totalTrips / limit)
       }
     });
   } catch (error) {
-    console.error('Get user details error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Get trips error:', error);
+    res.status(500).json({ error: 'Failed to fetch trips' });
   }
 });
 
 // Get platform analytics
 router.get('/analytics', adminAuth, async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
-
-    let dateFilter = {};
-    const now = new Date();
-    let startDate;
-
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        startDate = new Date(0);
-    }
-
-    dateFilter = {
-      createdAt: {
-        gte: startDate
+    // User engagement metrics
+    const activeUsers = await prisma.user.count({
+      where: {
+        trips: {
+          some: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            }
+          }
+        }
       }
-    };
-
-    // Get user growth
-    const newUsers = await prisma.user.count({
-      where: dateFilter
     });
 
-    // Get trip creation
-    const newTrips = await prisma.trip.count({
-      where: dateFilter
-    });
-
-    // Get popular destinations
+    // Popular destinations
     const popularDestinations = await prisma.tripStop.groupBy({
       by: ['cityId'],
-      _count: { cityId: true },
+      _count: {
+        cityId: true
+      },
       orderBy: {
         _count: {
           cityId: 'desc'
@@ -241,132 +343,50 @@ router.get('/analytics', adminAuth, async (req, res) => {
       take: 10
     });
 
-    const destinationsWithDetails = await Promise.all(
+    // Get city details for popular destinations
+    const popularCities = await Promise.all(
       popularDestinations.map(async (dest) => {
         const city = await prisma.city.findUnique({
           where: { id: dest.cityId },
-          select: { name: true, country: true }
+          select: {
+            id: true,
+            name: true,
+            country: true,
+            popularity: true,
+            costIndex: true
+          }
         });
         return {
-          city,
+          ...city,
           tripCount: dest._count.cityId
         };
       })
     );
 
-    // Get activity types distribution
-    const activityTypes = await prisma.activity.groupBy({
-      by: ['type'],
-      _count: { type: true }
-    });
-
-    // Get budget statistics
-    const budgetStats = await prisma.budgetItem.aggregate({
-      _avg: { amount: true },
-      _sum: { amount: true },
-      _count: { amount: true }
+    // Monthly trends - using Prisma instead of raw SQL
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    
+    const monthlyTrends = await prisma.trip.groupBy({
+      by: ['createdAt'],
+      where: {
+        createdAt: {
+          gte: twelveMonthsAgo
+        }
+      },
+      _count: {
+        id: true
+      }
     });
 
     res.json({
-      period,
-      growth: {
-        newUsers,
-        newTrips
-      },
-      popularDestinations: destinationsWithDetails,
-      activityTypes: activityTypes.map(type => ({
-        type: type.type,
-        count: type._count.type
-      })),
-      budgetStats: {
-        averageAmount: budgetStats._avg.amount,
-        totalAmount: budgetStats._sum.amount,
-        totalItems: budgetStats._count.amount
-      }
+      activeUsers,
+      popularCities,
+      monthlyTrends
     });
   } catch (error) {
-    console.error('Get analytics error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get monthly performance data
-router.get('/analytics/monthly', adminAuth, async (req, res) => {
-  try {
-    const { year = new Date().getFullYear() } = req.query;
-
-    const monthlyData = [];
-    
-    for (let month = 0; month < 12; month++) {
-      const startDate = new Date(parseInt(year), month, 1);
-      const endDate = new Date(parseInt(year), month + 1, 0);
-
-      const users = await prisma.user.count({
-        where: {
-          createdAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        }
-      });
-
-      const trips = await prisma.trip.count({
-        where: {
-          createdAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        }
-      });
-
-      const budgetTotal = await prisma.budgetItem.aggregate({
-        where: {
-          trip: {
-            createdAt: {
-              gte: startDate,
-              lte: endDate
-            }
-          }
-        },
-        _sum: { amount: true }
-      });
-
-      monthlyData.push({
-        month: startDate.toLocaleString('default', { month: 'long' }),
-        users,
-        trips,
-        revenue: budgetTotal._sum.amount || 0
-      });
-    }
-
-    res.json({ monthlyData, year: parseInt(year) });
-  } catch (error) {
-    console.error('Get monthly analytics error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Delete user (admin only)
-router.delete('/users/:id', adminAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(id) }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    await prisma.user.delete({
-      where: { id: parseInt(id) }
-    });
-
-    res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
 

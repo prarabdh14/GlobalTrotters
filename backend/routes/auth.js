@@ -79,10 +79,23 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Check if user has a password (not a Google OAuth user)
+    if (!user.password) {
+      return res.status(401).json({ 
+        error: 'This account was created with Google. Please use Google Sign-In instead.' 
+      });
+    }
+
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Check if JWT_SECRET is configured
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured');
+      return res.status(500).json({ error: 'Server configuration error' });
     }
 
     // Generate JWT token
@@ -91,6 +104,8 @@ router.post('/login', validateLogin, async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    console.log('Generated token for user:', user.id, 'Token:', token.substring(0, 20) + '...');
 
     // Return user data (excluding password)
     const { password: _, ...userData } = user;
