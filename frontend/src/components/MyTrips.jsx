@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Sparkles } from 'lucide-react'
+import { Calendar, MapPin, Edit, Eye, Trash2, Plus, Sparkles, Clock } from 'lucide-react'
 import AnimatedPage from './AnimatedPage'
 import VantaGlobe from './VantaGlobe'
 import { tripsApi } from '../api/trips'
 import { aiApi } from '../api/ai'
+import RescheduleModal from './RescheduleModal'
 
 const MyTrips = () => {
   const [trips, setTrips] = useState([])
@@ -13,6 +14,7 @@ const MyTrips = () => {
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [rescheduleModal, setRescheduleModal] = useState({ isOpen: false, trip: null })
 
   useEffect(() => {
     fetchTrips()
@@ -103,6 +105,38 @@ const MyTrips = () => {
     return 'upcoming'
   }
 
+  const canReschedule = (trip) => {
+    const now = new Date()
+    const startDate = new Date(trip.startDate)
+    const hoursUntilTrip = (startDate - now) / (1000 * 60 * 60)
+    console.log('Can reschedule check:', {
+      tripId: trip.id,
+      tripTitle: trip.title,
+      startDate: trip.startDate,
+      hoursUntilTrip,
+      status: trip.status,
+      canReschedule: hoursUntilTrip > 24 && trip.status !== 'completed'
+    })
+    return hoursUntilTrip > 24 && trip.status !== 'completed'
+  }
+
+  const handleRescheduleClick = (trip) => {
+    console.log('Reschedule clicked for trip:', trip)
+    alert(`Opening reschedule modal for trip: ${trip.name}`)
+    setRescheduleModal({ isOpen: true, trip })
+    console.log('Modal state set to:', { isOpen: true, trip })
+  }
+
+  const handleRescheduleSuccess = (response) => {
+    // Refresh trips after successful reschedule
+    fetchTrips()
+    // You could also show a success notification here
+  }
+
+  const closeRescheduleModal = () => {
+    setRescheduleModal({ isOpen: false, trip: null })
+  }
+
   const calculateProgress = (trip) => {
     // Simple progress calculation based on stops and activities
     const totalStops = trip._count?.stops || 0
@@ -155,6 +189,7 @@ const MyTrips = () => {
   console.log('Filtered trips:', filteredTrips)
   console.log('Loading:', loading)
   console.log('Error:', error)
+  console.log('Reschedule modal state:', rescheduleModal)
 
   return (
     <VantaGlobe
@@ -175,10 +210,12 @@ const MyTrips = () => {
             <h1 className="text-4xl font-bold mb-2 gradient-text">My Trips ✈️</h1>
             <p className="text-gray-600 text-lg">Manage and view all your travel plans</p>
           </div>
-          <Link to="/create-trip" className="btn btn-primary mt-4 md:mt-0 animate-scale-in">
-            <Plus size={16} />
-            New Trip
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link to="/create-trip" className="btn btn-primary">
+              <Plus size={16} />
+              Create New Trip
+            </Link>
+          </div>
         </div>
 
         {/* Filters and Search */}
@@ -287,23 +324,32 @@ const MyTrips = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex gap-2 pt-4">
                       <Link 
                         to={`/trip/${trip.id}/view`}
-                        className="btn btn-outline flex-1 text-center group-hover:border-blue-500 group-hover:text-blue-600"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/90 hover:bg-white text-blue-600 border border-blue-500/30 rounded-lg transition-all duration-200 font-medium text-sm hover:border-blue-400 hover:text-blue-700"
                       >
-                        <Eye size={16} />
-                        View
+                        <Eye size={14} />
+                        <span className="whitespace-nowrap">View</span>
                       </Link>
                       <Link 
                         to={`/trip/${trip.id}/build`}
-                        className="btn btn-secondary flex-1 text-center"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/90 hover:bg-white text-purple-600 border border-purple-500/30 rounded-lg transition-all duration-200 font-medium text-sm hover:border-purple-400 hover:text-purple-700"
                       >
-                        <Edit size={16} />
-                        Edit
+                        <Edit size={14} />
+                        <span className="whitespace-nowrap">Edit</span>
                       </Link>
-                      <button className="btn btn-outline text-red-600 hover:bg-red-50 hover:border-red-300">
-                        <Trash2 size={16} />
+                      {canReschedule(trip) && (
+                        <button 
+                          onClick={() => handleRescheduleClick(trip)}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/90 hover:bg-white text-orange-600 border border-orange-500/30 rounded-lg transition-all duration-200 font-medium text-sm hover:border-orange-400 hover:text-orange-700"
+                        >
+                          <Clock size={14} />
+                          <span className="whitespace-nowrap">Reschedule</span>
+                        </button>
+                      )}
+                      <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-red-600 border border-red-500/30 rounded-lg transition-all duration-200 font-medium text-sm hover:border-red-400 hover:text-red-700 min-w-[60px]">
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -329,6 +375,14 @@ const MyTrips = () => {
             </Link>
           </div>
         )}
+
+        {/* Reschedule Modal */}
+        <RescheduleModal
+          trip={rescheduleModal.trip}
+          isOpen={rescheduleModal.isOpen}
+          onClose={closeRescheduleModal}
+          onRescheduleSuccess={handleRescheduleSuccess}
+        />
       </div>
       </AnimatedPage>
     </VantaGlobe>
