@@ -110,7 +110,7 @@ const AdminDashboard = () => {
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'blue', change }) => (
-    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl backdrop-saturate-150" style={{backdropFilter: 'blur(12px) saturate(150%)'}}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-white/60 text-sm font-medium">{title}</p>
@@ -133,8 +133,8 @@ const AdminDashboard = () => {
       onClick={() => setActiveTab(id)}
       className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
         active 
-          ? 'bg-white/20 text-white border border-white/30' 
-          : 'text-white/60 hover:text-white hover:bg-white/10'
+          ? 'bg-white/15 backdrop-blur-md text-white border border-white/30 shadow-lg' 
+        : 'text-white/60 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
       }`}
     >
       <Icon size={16} />
@@ -181,7 +181,7 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               {/* Admin Info */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg backdrop-saturate-150" style={{backdropFilter: 'blur(8px) saturate(150%)'}}>
                 <Shield size={16} className="text-purple-400" />
                 <span className="text-white font-medium">Admin Panel</span>
               </div>
@@ -190,7 +190,8 @@ const AdminDashboard = () => {
               <button
                 type="button"
                 onClick={fetchDashboardData}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-100 rounded-lg hover:bg-blue-500/30 hover:border-blue-400/50 active:bg-blue-600/60 active:border-blue-300 active:text-white active:shadow-inner active:scale-95 transition-all duration-150 shadow-lg backdrop-saturate-150"
+                style={{backdropFilter: 'blur(8px) saturate(150%)'}}
               >
                 <RefreshCw size={16} />
                 Refresh
@@ -200,7 +201,8 @@ const AdminDashboard = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 backdrop-blur-md border border-red-400/30 text-red-100 rounded-lg hover:bg-red-500/30 hover:border-red-400/50 active:bg-red-600/60 active:border-red-300 active:text-white active:shadow-inner active:scale-95 transition-all duration-150 shadow-lg backdrop-saturate-150"
+                style={{backdropFilter: 'blur(8px) saturate(150%)'}}
               >
                 <LogOut size={16} />
                 Logout
@@ -239,9 +241,9 @@ const AdminDashboard = () => {
 
         {/* Overview Tab */}
         {activeTab === 'overview' && dashboardData && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               <StatCard
                 title="Total Users"
                 value={dashboardData.stats.totalUsers}
@@ -274,7 +276,7 @@ const AdminDashboard = () => {
 
             {/* Top Cities */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl backdrop-saturate-150" style={{backdropFilter: 'blur(12px) saturate(150%)'}}>
                 <h3 className="text-xl font-semibold text-white mb-4">Top Cities</h3>
                 <div className="space-y-3">
                   {dashboardData.topCities.map((city, index) => (
@@ -298,7 +300,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-2xl backdrop-saturate-150" style={{backdropFilter: 'blur(12px) saturate(150%)'}}>
                 <h3 className="text-xl font-semibold text-white mb-4">Recent Users</h3>
                 <div className="space-y-3">
                   {dashboardData.recentUsers.map((user) => (
@@ -334,7 +336,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden shadow-2xl backdrop-saturate-150" style={{backdropFilter: 'blur(12px) saturate(150%)'}}>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-white/10">
@@ -441,7 +443,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Trips Table */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden shadow-2xl backdrop-saturate-150" style={{backdropFilter: 'blur(12px) saturate(150%)'}}>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-white/10">
@@ -524,7 +526,7 @@ const AdminDashboard = () => {
         {activeTab === 'analytics' && analyticsData && (
           <div className="space-y-8">
             {/* Popular Cities Chart */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+            <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
               <h3 className="text-xl font-semibold text-white mb-4">Popular Destinations</h3>
               <div className="space-y-3">
                 {analyticsData.popularCities.map((city, index) => (
@@ -548,7 +550,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Monthly Trends */}
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+            <div className="bg-white/[0.08] backdrop-blur-md border border-white/30 rounded-xl p-6 shadow-lg shadow-black/10">
               <h3 className="text-xl font-semibold text-white mb-4">Monthly Trends</h3>
               <div className="space-y-3">
                 {analyticsData.monthlyTrends.map((trend, index) => (
