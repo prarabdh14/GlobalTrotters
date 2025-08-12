@@ -183,6 +183,30 @@ router.get('/dashboard', adminAuth, async (req, res) => {
       }
     });
 
+    // Calculate additional metrics
+    const activeUsers = await prisma.user.count({
+      where: {
+        trips: {
+          some: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            }
+          }
+        }
+      }
+    });
+
+    // Mock metrics for demonstration (in real app, these would come from analytics)
+    const avgTripCost = 25000; // Average trip cost in INR
+    const totalRevenue = totalTrips * avgTripCost;
+    const growthRate = 15; // Percentage growth
+    const avgSessionTime = 25; // Minutes
+    const bounceRate = 35; // Percentage
+    const retentionRate = 68; // Percentage
+    const successRate = 98; // Percentage
+    const errorRate = 2; // Percentage
+    const uptime = 99.9; // Percentage
+
     res.json({
       stats: {
         totalUsers,
@@ -192,6 +216,18 @@ router.get('/dashboard', adminAuth, async (req, res) => {
         totalAiItineraries,
         aiItinerariesThisMonth
       },
+      // Additional metrics for analytics cards
+      totalUsers,
+      activeUsers,
+      avgTripCost,
+      totalRevenue,
+      growthRate,
+      avgSessionTime,
+      bounceRate,
+      retentionRate,
+      successRate,
+      errorRate,
+      uptime,
       topCities,
       userGrowth,
       tripGrowth,
@@ -329,6 +365,59 @@ router.get('/analytics', adminAuth, async (req, res) => {
       }
     });
 
+    // User growth data
+    const totalUsers = await prisma.user.count();
+    const newUsersThisMonth = await prisma.user.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
+      }
+    });
+    const returningUsers = await prisma.user.count({
+      where: {
+        trips: {
+          some: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            }
+          }
+        }
+      }
+    });
+
+    // Trip status distribution
+    const now = new Date();
+    const planningTrips = await prisma.trip.count({
+      where: {
+        startDate: {
+          gt: now
+        }
+      }
+    });
+    const ongoingTrips = await prisma.trip.count({
+      where: {
+        startDate: {
+          lte: now
+        },
+        endDate: {
+          gte: now
+        }
+      }
+    });
+    const completedTrips = await prisma.trip.count({
+      where: {
+        endDate: {
+          lt: now
+        }
+      }
+    });
+    const cancelledTrips = await prisma.trip.count({
+      where: {
+        status: 'cancelled'
+      }
+    });
+
     // Popular destinations
     const popularDestinations = await prisma.tripStop.groupBy({
       by: ['cityId'],
@@ -363,26 +452,67 @@ router.get('/analytics', adminAuth, async (req, res) => {
       })
     );
 
-    // Monthly trends - using Prisma instead of raw SQL
+    // Monthly trends - enhanced with user data
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
     
-    const monthlyTrends = await prisma.trip.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: twelveMonthsAgo
-        }
-      },
-      _count: {
-        id: true
-      }
-    });
+    const monthlyTrends = await Promise.all(
+      Array.from({ length: 12 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        return Promise.all([
+          prisma.user.count({
+            where: {
+              createdAt: {
+                gte: startOfMonth,
+                lte: endOfMonth
+              }
+            }
+          }),
+          prisma.trip.count({
+            where: {
+              createdAt: {
+                gte: startOfMonth,
+                lte: endOfMonth
+              }
+            }
+          })
+        ]).then(([unique_users, total_trips]) => ({
+          month: startOfMonth.toISOString(),
+          unique_users,
+          total_trips
+        }));
+      })
+    );
+
+    // Budget distribution (mock data for now)
+    const budgetDistribution = {
+      transport: 30,
+      accommodation: 40,
+      activities: 20,
+      food: 8,
+      other: 2
+    };
 
     res.json({
       activeUsers,
       popularCities,
-      monthlyTrends
+      monthlyTrends: monthlyTrends.reverse(),
+      userGrowth: {
+        newUsers: newUsersThisMonth,
+        returningUsers: returningUsers,
+        activeUsers: activeUsers
+      },
+      tripStatus: {
+        planning: planningTrips,
+        ongoing: ongoingTrips,
+        completed: completedTrips,
+        cancelled: cancelledTrips
+      },
+      budgetDistribution
     });
   } catch (error) {
     console.error('Analytics error:', error);
