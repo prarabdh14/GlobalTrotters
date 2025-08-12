@@ -13,6 +13,7 @@ const aiRoutes = require('./routes/ai');
 const budgetRoutes = require('./routes/budgets');
 const adminRoutes = require('./routes/admin');
 const calendarRoutes = require('./routes/calendar');
+const rescheduleRoutes = require('./routes/reschedule');
 const { auth } = require('./middleware/auth');
 
 const app = express();
@@ -21,22 +22,30 @@ const PORT = process.env.PORT || 3000;
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
+// CORS configuration - more permissive for development
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', process.env.FRONTEND_URL].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Rate limiting - more lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 1000 // increased limit for development
 });
 app.use(limiter);
-
-// CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
-}));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -53,6 +62,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', auth, aiRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/reschedule', rescheduleRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

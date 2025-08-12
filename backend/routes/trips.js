@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../config/database');
 const { auth } = require('../middleware/auth');
 const { validateTrip, validateTripStop } = require('../middleware/validation');
+const { sendItineraryEmail, sendTripUpdateEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -131,6 +132,14 @@ router.post('/', auth, validateTrip, async (req, res) => {
       }
     });
 
+    // Send email notification
+    try {
+      await sendTripUpdateEmail(req.user, trip, 'created');
+    } catch (emailError) {
+      console.error('Failed to send trip creation email:', emailError);
+      // Don't fail the request if email fails
+    }
+
     res.status(201).json({
       message: 'Trip created successfully',
       trip
@@ -176,12 +185,70 @@ router.put('/:id', auth, validateTrip, async (req, res) => {
       }
     });
 
+    // Send email notification
+    try {
+      await sendTripUpdateEmail(req.user, updatedTrip, 'updated');
+    } catch (emailError) {
+      console.error('Failed to send trip update email:', emailError);
+      // Don't fail the request if email fails
+    }
+
     res.json({
       message: 'Trip updated successfully',
       trip: updatedTrip
     });
   } catch (error) {
     console.error('Update trip error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send detailed itinerary email
+router.post('/:id/send-itinerary', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const trip = await prisma.trip.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: req.user.id
+      },
+      include: {
+        stops: {
+          include: {
+            city: true,
+            activities: {
+              include: {
+                activity: true
+              },
+              orderBy: { startTime: 'asc' }
+            }
+          },
+          orderBy: { orderNum: 'asc' }
+        }
+      }
+    });
+
+    if (!trip) {
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    // Send detailed itinerary email
+    const emailResult = await sendItineraryEmail(req.user, trip, trip.stops);
+
+    if (emailResult.success) {
+      res.json({
+        message: 'Itinerary email sent successfully',
+        messageId: emailResult.messageId
+      });
+    } else {
+      res.status(500).json({
+        error: 'Failed to send itinerary email',
+        details: emailResult.error
+      });
+    }
+  } catch (error) {
+    console.error('Send itinerary email error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

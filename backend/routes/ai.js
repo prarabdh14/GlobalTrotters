@@ -1,6 +1,8 @@
 const express = require('express');
 const crypto = require('crypto');
 const prisma = require('../config/database');
+const { auth } = require('../middleware/auth');
+const { sendItineraryEmail } = require('../utils/emailService');
 const router = express.Router();
 
 // Lazy OpenAI import to keep startup fast
@@ -149,7 +151,7 @@ function makeCacheKey({ source, destination, start_date, end_date, preferences, 
 }
 
 // POST /api/ai/plan
-router.post('/plan', async (req, res) => {
+router.post('/plan', auth, async (req, res) => {
   try {
     console.log('=== AI PLAN REQUEST START ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
@@ -260,6 +262,29 @@ router.post('/plan', async (req, res) => {
     });
 
     console.log('Database save successful');
+    
+    // Send detailed itinerary email
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+      
+      if (user && user.email) {
+        const tripData = {
+          name: `${source} to ${destination}`,
+          description: `AI-generated itinerary from ${source} to ${destination}`,
+          startDate: new Date(start_date),
+          endDate: new Date(end_date)
+        };
+        
+        await sendItineraryEmail(user, tripData, []);
+        console.log('Itinerary email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Failed to send AI itinerary email:', emailError);
+      // Don't fail the request if email fails
+    }
+    
     console.log('=== AI PLAN REQUEST END ===');
     return res.json(created);
   } catch (err) {
@@ -304,12 +329,9 @@ router.get('/search', async (req, res) => {
 });
 
 // GET /api/ai/user - Get AI itineraries for the authenticated user
-router.get('/user', async (req, res) => {
+router.get('/user', auth, async (req, res) => {
   try {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const userId = req.user.id;
 
     const itineraries = await prisma.aiItinerary.findMany({
       where: { userId },

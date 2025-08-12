@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Clock, DollarSign, Share2, Copy, Edit, Loader2, Sparkles } from 'lucide-react'
+import { Calendar, MapPin, Clock, DollarSign, Share2, Copy, Edit, Loader2, Sparkles, Mail } from 'lucide-react'
 import VantaGlobe from './VantaGlobe'
 import { tripsApi } from '../api/trips'
 import { aiApi } from '../api/ai'
+import { emailApi } from '../api/email'
 
 const ItineraryView = () => {
   const { id } = useParams()
@@ -13,6 +14,7 @@ const ItineraryView = () => {
   const [aiItinerary, setAiItinerary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   useEffect(() => {
     fetchTripData()
@@ -206,6 +208,29 @@ const ItineraryView = () => {
     }
   }
 
+  const handleSendItineraryEmail = async () => {
+    try {
+      setSendingEmail(true)
+      
+      // For regular trips, use the trip ID
+      // For AI trips, we need to handle differently since they don't have a regular trip ID
+      if (trip.isAiGenerated) {
+        alert('Email feature is available for saved trips. Please save this AI itinerary to your trips first.')
+        return
+      }
+      
+      const tripId = id
+      await emailApi.sendItineraryEmail(tripId)
+      
+      alert('Itinerary email sent successfully! Check your email inbox.')
+    } catch (error) {
+      console.error('Error sending itinerary email:', error)
+      alert('Failed to send itinerary email. Please try again.')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   if (loading) {
     return (
       <VantaGlobe>
@@ -295,6 +320,20 @@ const ItineraryView = () => {
               <Share2 size={14} />
               Share
             </button>
+            {!trip.isAiGenerated && (
+              <button 
+                onClick={handleSendItineraryEmail}
+                disabled={sendingEmail}
+                className="px-1 py-2 text-sm rounded-lg border border-white/30 text-white/80 hover:bg-white/10 transition-all duration-200 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+              {sendingEmail ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Mail size={14} />
+              )}
+              {sendingEmail ? 'Sending...' : 'Send Itinerary'}
+            </button>
+            )}
             <Link 
               to={`/trip/${id}/build`} 
               className="px-1 py-1 text-sm rounded-lg bg-white/10 border border-white/30 text-white/80 hover:bg-white/20 transition-all duration-200 flex items-center gap-1"

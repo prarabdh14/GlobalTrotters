@@ -52,6 +52,10 @@ model Trip {
   endDate     DateTime
   coverImg    String?
   createdAt   DateTime  @default(now())
+  status      String    @default("active") // active, rescheduled, cancelled
+  originalStartDate DateTime? // For tracking original dates
+  originalEndDate   DateTime? // For tracking original dates
+  rescheduledAt DateTime? // When the trip was rescheduled
   stops       TripStop[]
   budgetItems BudgetItem[]
   sharedTrip  SharedTrip?

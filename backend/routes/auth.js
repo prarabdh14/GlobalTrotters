@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const prisma = require('../config/database');
 const { auth } = require('../middleware/auth');
 const { validateRegistration, validateLogin } = require('../middleware/validation');
+const { sendWelcomeEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -53,6 +54,15 @@ router.post('/register', validateRegistration, async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(user);
+      console.log('Welcome email sent to new user:', user.email);
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Don't fail the registration if email fails
+    }
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -256,6 +266,15 @@ router.get('/google/callback', async (req, res) => {
         }
       });
       console.log('Created new user:', user.id);
+      
+      // Send welcome email to new Google OAuth user
+      try {
+        await sendWelcomeEmail(user);
+        console.log('Welcome email sent to new Google OAuth user:', user.email);
+      } catch (emailError) {
+        console.error('Failed to send welcome email to Google OAuth user:', emailError);
+        // Don't fail the registration if email fails
+      }
     } else if (!user.googleId) {
       // Link existing user with Google account
       user = await prisma.user.update({
