@@ -190,8 +190,8 @@ const AdminDashboard = () => {
               <button
                 type="button"
                 onClick={fetchDashboardData}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 backdrop-blur-md border border-blue-400/30 text-blue-100 rounded-lg hover:bg-blue-500/30 hover:border-blue-400/50 active:bg-blue-600/60 active:border-blue-300 active:text-white active:shadow-inner active:scale-95 transition-all duration-150 shadow-lg backdrop-saturate-150"
-                style={{backdropFilter: 'blur(8px) saturate(150%)'}}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500/30 backdrop-blur-lg border-2 border-blue-400/50 text-white rounded-lg hover:bg-blue-500/40 hover:border-blue-300/70 active:bg-blue-600/70 active:border-blue-200 active:shadow-inner active:scale-95 transition-all duration-150 shadow-xl"
+                style={{backdropFilter: 'blur(12px) saturate(160%)', background: 'rgba(59, 130, 246, 0.25)'}}
               >
                 <RefreshCw size={16} />
                 Refresh
@@ -201,8 +201,8 @@ const AdminDashboard = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 backdrop-blur-md border border-red-400/30 text-red-100 rounded-lg hover:bg-red-500/30 hover:border-red-400/50 active:bg-red-600/60 active:border-red-300 active:text-white active:shadow-inner active:scale-95 transition-all duration-150 shadow-lg backdrop-saturate-150"
-                style={{backdropFilter: 'blur(8px) saturate(150%)'}}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/30 backdrop-blur-lg border-2 border-red-400/50 text-white rounded-lg hover:bg-red-500/40 hover:border-red-300/70 active:bg-red-600/70 active:border-red-200 active:shadow-inner active:scale-95 transition-all duration-150 shadow-xl"
+                style={{backdropFilter: 'blur(12px) saturate(160%)', background: 'rgba(239, 68, 68, 0.25)'}}
               >
                 <LogOut size={16} />
                 Logout
