@@ -42,24 +42,15 @@ A comprehensive REST API for the GlobalTrotters travel planning application buil
    npm install
    ```
 
-3. **Set up environment variables**
-   Create a `.env` file in the backend directory:
-   ```env
-   DATABASE_URL="postgresql://username:password@localhost:5432/globetrotters"
-   JWT_SECRET="your-super-secret-jwt-key-here"
-   OPENROUTER_API_KEY="your-openrouter-api-key-here"
-   PORT=3000
-   NODE_ENV=development
-   FRONTEND_URL="http://localhost:5173"
-   ```
 
-4. **Set up the database**
+
+3. **Set up the database**
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
-5. **Start the development server**
+4. **Start the development server**
    ```bash
    npm run dev
    ```
